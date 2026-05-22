@@ -313,7 +313,7 @@ else:
         "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
         "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
         "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
-        "San Diego FC": {"jmeno": "San Diego", "kod": "us"}
+        "San Diego FC": {"jmeno": "San Diego", "kod": "us"},
         "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
         "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
         "St. Louis City SC": {"jmeno": "St. Louis City", "kod": "us"},
