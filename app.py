@@ -288,7 +288,7 @@ else:
         "Curaçao": {"jmeno": "Curaçao", "kod": "cw"}, "Haiti": {"jmeno": "Haiti", "kod": "ht"}, "Panama": {"jmeno": "Panama", "kod": "pa"}, "New Zealand": {"jmeno": "Nový Zéland", "kod": "nz"},
         
      # --- MLS TÝMY PRO TESTOVÁNÍ ---
-        "Atlanta Utd": {"jmeno": "Atlanta Utd", "kod": "us"},
+        "Atlanta United FC": {"jmeno": "Atlanta Utd", "kod": "us"},
         "Austin FC": {"jmeno": "Austin FC", "kod": "us"},
         "Charlotte FC": {"jmeno": "Charlotte FC", "kod": "us"},
         "Chicago Fire": {"jmeno": "Chicago Fire", "kod": "us"},
@@ -318,7 +318,7 @@ else:
         "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
         "St. Louis City SC": {"jmeno": "St. Louis City", "kod": "us"},
         "Toronto FC": {"jmeno": "Toronto FC", "kod": "ca"},
-        "Vancouver": {"jmeno": "Vancouver", "kod": "ca"}   
+        "Vancouver Whitecaps FC": {"jmeno": "Vancouver", "kod": "ca"}   
     }
     
     def dej_data_tymu(tym_z_api):
