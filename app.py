@@ -288,17 +288,17 @@ else:
         "Curaçao": {"jmeno": "Curaçao", "kod": "cw"}, "Haiti": {"jmeno": "Haiti", "kod": "ht"}, "Panama": {"jmeno": "Panama", "kod": "pa"}, "New Zealand": {"jmeno": "Nový Zéland", "kod": "nz"},
         
      # --- MLS TÝMY PRO TESTOVÁNÍ ---
-        "Atlanta United FC": {"jmeno": "Atlanta Utd", "kod": "us"},
+        "Atlanta Utd": {"jmeno": "Atlanta Utd", "kod": "us"},
         "Austin FC": {"jmeno": "Austin FC", "kod": "us"},
         "Charlotte FC": {"jmeno": "Charlotte FC", "kod": "us"},
         "Chicago Fire": {"jmeno": "Chicago Fire", "kod": "us"},
         "Chicago Fire FC": {"jmeno": "Chicago Fire", "kod": "us"},
         "FC Cincinnati": {"jmeno": "FC Cincinnati", "kod": "us"},
         "Colorado Rapids": {"jmeno": "Colorado Rapids", "kod": "us"},
-        "Columbus Crew": {"jmeno": "Columbus Crew", "kod": "us"},
+        "Columbus Crew SC": {"jmeno": "Columbus Crew SC", "kod": "us"},
         "FC Dallas": {"jmeno": "FC Dallas", "kod": "us"},
         "D.C. United": {"jmeno": "D.C. United", "kod": "us"},
-        "Houston Dynamo FC": {"jmeno": "Houston Dynamo", "kod": "us"},
+        "Houston Dynamo": {"jmeno": "Houston Dynamo", "kod": "us"},
         "Sporting Kansas City": {"jmeno": "Sporting KC", "kod": "us"},
         "LA Galaxy": {"jmeno": "LA Galaxy", "kod": "us"},
         "Los Angeles FC": {"jmeno": "Los Angeles FC", "kod": "us"},
@@ -313,11 +313,12 @@ else:
         "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
         "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
         "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
+        "San Diego FC": {"jmeno": "San Diego", "kod": "us"}
         "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
         "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
         "St. Louis City SC": {"jmeno": "St. Louis City", "kod": "us"},
         "Toronto FC": {"jmeno": "Toronto FC", "kod": "ca"},
-        "Vancouver Whitecaps FC": {"jmeno": "Vancouver", "kod": "ca"}   
+        "Vancouver": {"jmeno": "Vancouver", "kod": "ca"}   
     }
     
     def dej_data_tymu(tym_z_api):
