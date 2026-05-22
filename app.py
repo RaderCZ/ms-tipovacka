@@ -5,7 +5,7 @@ import requests
 from datetime import datetime, timedelta
 
 # --- 🎨 TUNING IFORTUNA.CZ + FONT ROBOTO (ABSOLUTNÍ FIX PRO TEXTY TLAČÍTEK PŘI HOVERU) ---
-st.set_page_config(page_title="Naše MS Tipovačka", page_icon="⚽", layout="centered")
+st.set_page_config(page_title="MS 2026 - Tipovačka", page_icon="⚽", layout="centered")
 
 st.markdown("""
     <style>
@@ -243,7 +243,7 @@ for radek in data_uzivatele:
     UZIVATELE[jmeno] = {"heslo": heslo, "body": body}
 
 # --- HLAVNÍ TITULEK ---
-st.title("⚽ MS 2026 - TIPOVAČKA")
+st.title("⚽ MS 26 TIPOVAČKA")
 
 if "prihlasen" not in st.session_state:
     st.session_state["prihlasen"] = False
