@@ -336,15 +336,28 @@ else:
             if not has_draw:
                 st.warning("🚨 **PLAY-OFF ZÁPAS:** Sázka na remízu není možná. Tipuje se **VÍTĚZ DO ROZHODNUTÍ**.")
             
-            v_col1, v_col2, v_col3 = st.columns([3, 1, 3])
-            with v_col1:
-                if t_domaci['kod'] != "un": st.markdown(f"<div style='text-align: center;'><img src='https://flagcdn.com/w160/{t_domaci['kod']}.png' width='70'></div>", unsafe_allow_html=True)
-                st.markdown(f"<div style='text-align: center; font-size: 22px; font-weight: bold; margin-top: 10px;'>{t_domaci['jmeno']}</div>", unsafe_allow_html=True)
-            with v_col2: st.markdown("<h2 style='text-align: center; color: #888888; margin-top: 20px;'>VS</h2>", unsafe_allow_html=True)
-            with v_col3:
-                if t_hoste['kod'] != "un": st.markdown(f"<div style='text-align: center;'><img src='https://flagcdn.com/w160/{t_hoste['kod']}.png' width='70'></div>", unsafe_allow_html=True)
-                st.markdown(f"<div style='text-align: center; font-size: 22px; font-weight: bold; margin-top: 10px;'>{t_hoste['jmeno']}</div>", unsafe_allow_html=True)
+            # --- START: VLAJKY VEDLE SEBE (FLEXBOX) ---
+            img_domaci = f"<img src='https://flagcdn.com/w160/{t_domaci['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_domaci['kod'] != "un" else ""
+            img_hoste = f"<img src='https://flagcdn.com/w160/{t_hoste['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_hoste['kod'] != "un" else ""
+            
+            html_vlajky = f"""
+            <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
+                <div style='flex: 1; text-align: center;'>
+                    {img_domaci}
+                    <div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div>
+                </div>
+                <div style='flex: 0.5; text-align: center;'>
+                    <h2 style='color: #888888; margin: 0;'>VS</h2>
+                </div>
+                <div style='flex: 1; text-align: center;'>
+                    {img_hoste}
+                    <div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div>
+                </div>
+            </div>
+            """
+            st.markdown(html_vlajky, unsafe_allow_html=True)
             st.markdown("---")
+            # --- KONEC: VLAJKY VEDLE SEBE ---
             
             if zapas_uzamcen:
                 if stavajici_tip:
