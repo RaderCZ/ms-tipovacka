@@ -243,7 +243,7 @@ for radek in data_uzivatele:
     UZIVATELE[jmeno] = {"heslo": heslo, "body": body}
 
 # --- HLAVNÍ TITULEK ---
-st.title("⚽ MS Fotbal - Kurzová Tipovačka")
+st.title("⚽ MS 2026 - TIPOVAČKA")
 
 if "prihlasen" not in st.session_state:
     st.session_state["prihlasen"] = False
@@ -328,8 +328,8 @@ else:
     aktualni_body = UZIVATELE[aktualni_uzivatel]["body"]
     
     # --- SIDEBAR ---
-    st.sidebar.write(f"👤 Přihlášen: **{aktualni_uzivatel}**")
-    st.sidebar.write(f"✨ Tvoje body: **{aktualni_body} b.**")
+    st.sidebar.write(f"👤 Hráč: **{aktualni_uzivatel}**")
+    st.sidebar.write(f"✨ Body: **{aktualni_body} b.**")
     
     if st.sidebar.button("Odhlásit se"):
         st.session_state["prihlasen"] = False
@@ -477,13 +477,13 @@ else:
                         st.success("Tiket byl podán!")
                         st.rerun()
 
-    tab1, tab2, tab3 = st.tabs(["🔮 Kurzová nabídka", "📜 Moje tipy", "⚙️ Admin"])
+    tab1, tab2, tab3 = st.tabs(["📅 Kurzová nabídka", "📜 Moje tipy", "⚙️ Admin"])
 
     # ==========================================
     # ZÁLOŽKA 1: KURZOVÁ NABÍDKA
     # ==========================================
     with tab1:
-        st.subheader("🔮 Nabídka zápasů")
+        st.subheader("📅 Nabídka zápasů")
         
         skupina_dnesni, skupina_nadchazejici, skupina_odehrane = [], [], []
         dnes_str = datetime.now().strftime("%d.%m.")
@@ -512,7 +512,7 @@ else:
                 for b in skupina_dnesni: vykresli_detail_zapasu(b["zapas"], b["uzamcen"], moje_sazky)
             else: st.info("Dnes se nehrají žádné zápasy.")
                 
-        with st.expander("📅 NADCHÁZEJÍCÍ ZÁPASY", expanded=False):
+        with st.expander("🔮 NADCHÁZEJÍCÍ ZÁPASY", expanded=False):
             if skupina_nadchazejici:
                 for b in skupina_nadchazejici: vykresli_detail_zapasu(b["zapas"], b["uzamcen"], moje_sazky)
             else: st.info("Žádné další nadcházející zápasy v programu nejsou.")
@@ -526,8 +526,8 @@ else:
     # ZÁLOŽKA 2: MATCH CENTER / GRAF SÁZEK
     # ==========================================
     with tab2:
-        st.subheader("📝 Moje tipy a přehled sázek")
-        st.write("Zde vidíš přehled svých tipů a úspěšnosti. Jakmile zápas reálně odstartuje, přímo pod tvým tipem uvidíš, jak sázeli ostatní.")
+        st.subheader("📜 Moje tipy a graf")
+        st.write("Tady uvidíš své aktuální i vyhodnocené tipy spolu s grafem přírůstku bodů.")
         
         # --- 📈 GRAPH S TOP FORTUNA STYLEM ---
         import pandas as pd
@@ -594,7 +594,7 @@ else:
                     is_vyhodnoceno = stavajici_tip and str(stavajici_tip.get("Stav_Tipu", "")).lower() == "vyhodnoceno"
                     
                     if is_vyhodnoceno: titulek_radku = f"✅ {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (+{stavajici_tip.get('Body_Ziskane', 0)} b.)"
-                    elif zapas_uzamcen: titulek_radku = f"🔒 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (ZAČALO)"
+                    elif zapas_uzamcen: titulek_radku = f"🔒 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (PROBÍHÁ)"
                     else: titulek_radku = f"⏳ {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (ČEKÁ NA VÝKOP)"
                         
                     with st.expander(titulek_radku):
@@ -624,8 +624,8 @@ else:
                             with c2:
                                 tip_moj_goly = f"{stavajici_tip['Tip_Goly']} než 2.5 gólu" if stavajici_tip['Tip_Goly'] != "Nenasazeno" else "Nevsadil góly"
                                 i_goly = "🟢" if is_vyhodnoceno and stavajici_tip.get('Stav_Goly') == "vyhra" else ("🔴" if is_vyhodnoceno else "")
-                                st.info(f"{i_goly} **Počet gólů (2.5):** {tip_moj_goly} (kurz {stavajici_tip['Kurz_Goly']})")
-                        else: st.warning("⚠️ Tento zápas jsi nestihl natipovat.")
+                                st.info(f"{i_goly} **Počet gólů:** {tip_moj_goly} (kurz {stavajici_tip['Kurz_Goly']})")
+                        else: st.warning("⚠️ Tento zápas jsi bohužel nestihl natipovat.")
                             
                         if zapas_uzamcen:
                             st.write("")
