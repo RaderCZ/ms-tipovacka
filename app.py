@@ -243,7 +243,7 @@ for radek in data_uzivatele:
     UZIVATELE[jmeno] = {"heslo": heslo, "body": body}
 
 # --- HLAVNÍ TITULEK ---
-st.title("⚽ MS 26 - TIPOVAČKA")
+st.title("⚽ MS 2026 - TIPOVAČKA")
 
 if "prihlasen" not in st.session_state:
     st.session_state["prihlasen"] = False
