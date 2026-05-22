@@ -619,7 +619,7 @@ else:
         else:
             st.subheader("⚙️ Ovládací panel administrátora")
             if st.button("🔄 Stáhnout čerstvé zápasy a kurzy", type="secondary"):
-                SPORT = "soccer_fifa_world_cup" 
+                SPORT = "soccer_usa_mls" 
                 # OPRAVENO: Odstraněn neplatný trh 'outcomes', stahujeme prověřenou klasiku
                 url = f"https://api.the-odds-api.com/v4/sports/{SPORT}/odds/?apiKey={API_KEY_ODDS}&regions=eu&markets=h2h,totals"
                 with st.spinner("Stahuji data..."):
@@ -678,7 +678,7 @@ else:
             st.markdown("---")
 
             if st.button("🏆 Vyhodnotit výsledky zápasů a rozdat body", type="secondary"):
-                SPORT = "soccer_fifa_world_cup"
+                SPORT = "soccer_usa_mls"
                 url_scores = f"https://api.the-odds-api.com/v4/sports/{SPORT}/scores/?apiKey={API_KEY_ODDS}&daysFrom=3"
                 with st.spinner("Vyhodnocuji..."):
                     odpoved_scores = requests.get(url_scores)
