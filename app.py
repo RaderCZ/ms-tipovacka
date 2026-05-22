@@ -285,7 +285,39 @@ else:
         "Australia": {"jmeno": "Austrálie", "kod": "au"}, "Iran": {"jmeno": "Írán", "kod": "ir"}, "Iraq": {"jmeno": "Irák", "kod": "iq"},
         "Japan": {"jmeno": "Japonsko", "kod": "jp"}, "Jordan": {"jmeno": "Jordánsko", "kod": "jo"}, "Qatar": {"jmeno": "Katar", "kod": "qa"},
         "Saudi Arabia": {"jmeno": "Saúdská Arábie", "kod": "sa"}, "South Korea": {"jmeno": "Jižní Korea", "kod": "kr"}, "Uzbekistan": {"jmeno": "Uzbekistán", "kod": "uz"},
-        "Curaçao": {"jmeno": "Curaçao", "kod": "cw"}, "Haiti": {"jmeno": "Haiti", "kod": "ht"}, "Panama": {"jmeno": "Panama", "kod": "pa"}, "New Zealand": {"jmeno": "Nový Zéland", "kod": "nz"}
+        "Curaçao": {"jmeno": "Curaçao", "kod": "cw"}, "Haiti": {"jmeno": "Haiti", "kod": "ht"}, "Panama": {"jmeno": "Panama", "kod": "pa"}, "New Zealand": {"jmeno": "Nový Zéland", "kod": "nz"},
+        
+     # --- MLS TÝMY PRO TESTOVÁNÍ ---
+        "Atlanta United FC": {"jmeno": "Atlanta Utd", "kod": "us"},
+        "Austin FC": {"jmeno": "Austin FC", "kod": "us"},
+        "Charlotte FC": {"jmeno": "Charlotte FC", "kod": "us"},
+        "Chicago Fire": {"jmeno": "Chicago Fire", "kod": "us"},
+        "Chicago Fire FC": {"jmeno": "Chicago Fire", "kod": "us"},
+        "FC Cincinnati": {"jmeno": "FC Cincinnati", "kod": "us"},
+        "Colorado Rapids": {"jmeno": "Colorado Rapids", "kod": "us"},
+        "Columbus Crew": {"jmeno": "Columbus Crew", "kod": "us"},
+        "FC Dallas": {"jmeno": "FC Dallas", "kod": "us"},
+        "D.C. United": {"jmeno": "D.C. United", "kod": "us"},
+        "Houston Dynamo FC": {"jmeno": "Houston Dynamo", "kod": "us"},
+        "Sporting Kansas City": {"jmeno": "Sporting KC", "kod": "us"},
+        "LA Galaxy": {"jmeno": "LA Galaxy", "kod": "us"},
+        "Los Angeles FC": {"jmeno": "Los Angeles FC", "kod": "us"},
+        "Inter Miami CF": {"jmeno": "Inter Miami", "kod": "us"},
+        "Minnesota United FC": {"jmeno": "Minnesota Utd", "kod": "us"},
+        "CF Montréal": {"jmeno": "CF Montréal", "kod": "ca"},
+        "Nashville SC": {"jmeno": "Nashville SC", "kod": "us"},
+        "New England Revolution": {"jmeno": "NE Revolution", "kod": "us"},
+        "New York City FC": {"jmeno": "New York City", "kod": "us"},
+        "New York Red Bulls": {"jmeno": "NY Red Bulls", "kod": "us"},
+        "Orlando City SC": {"jmeno": "Orlando City", "kod": "us"},
+        "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
+        "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
+        "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
+        "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
+        "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
+        "St. Louis City SC": {"jmeno": "St. Louis City", "kod": "us"},
+        "Toronto FC": {"jmeno": "Toronto FC", "kod": "ca"},
+        "Vancouver Whitecaps FC": {"jmeno": "Vancouver", "kod": "ca"}   
     }
     
     def dej_data_tymu(tym_z_api):
