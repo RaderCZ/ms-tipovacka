@@ -304,7 +304,7 @@ else:
         "Los Angeles FC": {"jmeno": "Los Angeles FC", "kod": "us"},
         "Inter Miami CF": {"jmeno": "Inter Miami", "kod": "us"},
         "Minnesota United FC": {"jmeno": "Minnesota Utd", "kod": "us"},
-        "CF Montréal": {"jmeno": "CF Montréal", "kod": "ca"},
+        "CF Montreal": {"jmeno": "CF Montreal", "kod": "ca"},
         "Nashville SC": {"jmeno": "Nashville SC", "kod": "us"},
         "New England Revolution": {"jmeno": "NE Revolution", "kod": "us"},
         "New York City FC": {"jmeno": "New York City", "kod": "us"},
