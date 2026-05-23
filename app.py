@@ -485,8 +485,11 @@ else:
     with tab1:
         st.subheader("📅 Nabídka zápasů")
         
+        # --- OPRAVA ČASU: Vynucení CZ času ---
+        aktualni_cas = datetime.utcnow() + timedelta(hours=2)
+        dnes_str = aktualni_cas.strftime("%d.%m.")
+        
         skupina_dnesni, skupina_nadchazejici, skupina_odehrane = [], [], []
-        dnes_str = datetime.now().strftime("%d.%m.")
         
         for z in data_zapasy:
             if str(z.get("Stav", "")).lower() == "aktivni" and str(z.get("ID", "")).strip() != "":
@@ -494,9 +497,10 @@ else:
                 zapas_uzamcen, je_dnes, je_v_minulosti = False, False, False
                 try:
                     match_dt = datetime.strptime(f"{z_datum_str}.2026", "%d.%m. %H:%M.%Y")
-                    if datetime.now() >= (match_dt - timedelta(minutes=1)): zapas_uzamcen = True
-                    if datetime.now() >= match_dt: je_v_minulosti = True
-                    if match_dt.date() == datetime.now().date(): je_dnes = True
+                    # Místo datetime.now() používáme náš aktualni_cas
+                    if aktualni_cas >= (match_dt - timedelta(minutes=1)): zapas_uzamcen = True
+                    if aktualni_cas >= match_dt: je_v_minulosti = True
+                    if match_dt.date() == aktualni_cas.date(): je_dnes = True
                 except:
                     if z_datum_str.startswith(dnes_str): je_dnes = True
                 
@@ -577,13 +581,15 @@ else:
             st.markdown("<br>", unsafe_allow_html=True)
             
         # --- VÝPIS TIKETŮ ---
+        aktualni_cas = datetime.utcnow() + timedelta(hours=2) # OPRAVA ČASU
         for z in data_zapasy:
             if str(z.get("Stav", "")).lower() == "aktivni" and str(z.get("ID", "")).strip() != "":
                 z_datum_str = z.get("Datum", "")
                 zapas_uzamcen = False
                 try:
                     match_dt = datetime.strptime(f"{z_datum_str}.2026", "%d.%m. %H:%M.%Y")
-                    if datetime.now() >= (match_dt - timedelta(minutes=1)): zapas_uzamcen = True
+                    # Místo datetime.now() používáme náš aktualni_cas
+                    if aktualni_cas >= (match_dt - timedelta(minutes=1)): zapas_uzamcen = True
                 except: pass
                 
                 stavajici_tip = next((s for s in moje_sazky if str(s.get("ID_zapasu")) == str(z["ID"])), None)
