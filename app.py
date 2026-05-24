@@ -492,7 +492,7 @@ else:
         skupina_dnesni, skupina_nadchazejici, skupina_odehrane = [], [], []
         
         for z in data_zapasy:
-            if str(z.get("Stav", "")).lower() == "aktivni" and str(z.get("ID", "")).strip() != "":
+            if str(z.get("Stav", "")).lower() in ["aktivni", "ukonceno"] and str(z.get("ID", "")).strip() != "":
                 z_datum_str = z.get("Datum", "")
                 zapas_uzamcen, je_dnes, je_v_minulosti = False, False, False
                 try:
@@ -507,7 +507,7 @@ else:
                 is_vyhodnoceno = any(str(s.get("ID_zapasu")) == str(z["ID"]) and str(s.get("Stav_Tipu", "")).lower() == "vyhodnoceno" for s in vsechny_sazky)
                 balicek = {"zapas": z, "uzamcen": zapas_uzamcen}
                 
-                if is_vyhodnoceno or (je_v_minulosti and not je_dnes): skupina_odehrane.append(balicek)
+                if is_vyhodnoceno or (je_v_minulosti and not je_dnes) or str(z.get("Stav", "")).lower() == "ukonceno": skupina_odehrane.append(balicek)
                 elif je_dnes: skupina_dnesni.append(balicek)
                 else: skupina_nadchazejici.append(balicek)
                     
@@ -583,7 +583,7 @@ else:
         # --- VÝPIS TIKETŮ ---
         aktualni_cas = datetime.utcnow() + timedelta(hours=2) # OPRAVA ČASU
         for z in data_zapasy:
-            if str(z.get("Stav", "")).lower() == "aktivni" and str(z.get("ID", "")).strip() != "":
+            if str(z.get("Stav", "")).lower() in ["aktivni", "ukonceno"] and str(z.get("ID", "")).strip() != "":
                 z_datum_str = z.get("Datum", "")
                 zapas_uzamcen = False
                 try:
