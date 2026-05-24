@@ -763,60 +763,97 @@ else:
             st.subheader("⚙️ Ovládací panel administrátora")
             if st.button("🔄 Stáhnout čerstvé zápasy a kurzy", type="secondary"):
                 SPORT = "soccer_usa_mls" 
-                # OPRAVENO: Odstraněn neplatný trh 'outcomes', stahujeme prověřenou klasiku
                 url = f"https://api.the-odds-api.com/v4/sports/{SPORT}/odds/?apiKey={API_KEY_ODDS}&regions=eu&markets=h2h,totals"
-                with st.spinner("Stahuji data..."):
+                with st.spinner("Aktualizuji kurzovou nabídku..."):
                     odpoved = requests.get(url)
-                    if odpoved.status_code != 200: st.error(f"Chyba: {odpoved.text}"); st.stop()
-                    data = odpoved.json()
-                    sloucene_zapasy = {}
+                    if odpoved.status_code != 200: st.error(f"Chyba API: {odpoved.text}"); st.stop()
+                    data_api = odpoved.json()
+                    
+                    # 1. Načteme stávající zápasy z tabulky, abychom je NESMAZALI
+                    sheet_z = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
+                    zapasy_stavejici = sheet_z.get_all_records()
+                    hlavicka_zapasy = ["ID", "Domaci", "Hoste", "Datum", "Kurz_1", "Kurz_X", "Kurz_2", "O05", "U05", "O15", "U15", "O25", "U25", "O35", "U35", "O45", "U45", "O55", "U55", "Vysledek", "Stav"]
+                    
+                    # Najdeme nejvyšší stávající ID a vytvoříme si index zápasů podle jména
+                    max_id = 0
+                    mapa_zapasu = {}
+                    for zp in zapasy_stavejici:
+                        try:
+                            id_val = int(zp.get("ID", 0))
+                            if id_val > max_id: max_id = id_val
+                        except: pass
+                        klic = f"{zp.get('Domaci')} vs {zp.get('Hoste')}"
+                        mapa_zapasu[klic] = zp
 
-                    for zapas in data:
+                    # 2. Zpracujeme čerstvá data z API
+                    for zapas in data_api:
                         domaci, hoste = zapas["home_team"], zapas["away_team"]
+                        klic_zapasu = f"{domaci} vs {hoste}"
+                        
                         cas_api_str = zapas.get("commence_time", "")
+                        datum_formatovane = ""
                         if cas_api_str:
                             cas_cz = datetime.strptime(cas_api_str, "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=2)
                             datum_formatovane = cas_cz.strftime("%d.%m. %H:%M")
-                        else: datum_formatovane = ""
-                        klic_zapasu = f"{domaci} vs {hoste}"
 
-                        if klic_zapasu not in sloucene_zapasy:
-                            sloucene_zapasy[klic_zapasu] = {
-                                "domaci": domaci, "hoste": hoste, "datum": datum_formatovane,
-                                "k_1": "", "k_x": "", "k_2": "", "o25": "", "u25": ""
-                            }
-                        if datum_formatovane and not sloucene_zapasy[klic_zapasu]["datum"]: sloucene_zapasy[klic_zapasu]["datum"] = datum_formatovane
+                        # Vytáhneme kurzy z API
+                        k_1, k_x, k_2, o25, u25 = "", "", "", "", ""
                         if zapas.get("bookmakers"):
                             for trh in zapas["bookmakers"][0]["markets"]:
                                 if trh["key"] == "h2h":
                                     for t in trh["outcomes"]:
-                                        if t["name"] == domaci: sloucene_zapasy[klic_zapasu]["k_1"] = t["price"]
-                                        elif t["name"] == hoste: sloucene_zapasy[klic_zapasu]["k_2"] = t["price"]
-                                        elif t["name"] == "Draw": sloucene_zapasy[klic_zapasu]["k_x"] = t["price"]
+                                        if t["name"] == domaci: k_1 = t["price"]
+                                        elif t["name"] == hoste: k_2 = t["price"]
+                                        elif t["name"] == "Draw": k_x = t["price"]
                                 if trh["key"] == "totals":
                                     for t in trh["outcomes"]:
                                         if t.get("point") == 2.5:
-                                            if t["name"] == "Over": sloucene_zapasy[klic_zapasu]["o25"] = t["price"]
-                                            elif t["name"] == "Under": sloucene_zapasy[klic_zapasu]["u25"] = t["price"]
+                                            if t["name"] == "Over": o25 = t["price"]
+                                            elif t["name"] == "Under": u25 = t["price"]
 
-                    nové_zápasy = []
-                    serazene_klice = sorted(sloucene_zapasy.keys(), key=lambda k: sloucene_zapasy[k]["datum"] if sloucene_zapasy[k]["datum"] else "99.99. 99:99")
+                        if klic_zapasu in mapa_zapasu:
+                            # ZÁPAS UŽ MÁME: Pokud je stále aktivní, pouze aktualizujeme kurzy a čas
+                            if str(mapa_zapasu[klic_zapasu].get("Stav")).lower() == "aktivni":
+                                mapa_zapasu[klic_zapasu]["Kurz_1"] = k_1
+                                mapa_zapasu[klic_zapasu]["Kurz_X"] = k_x
+                                mapa_zapasu[klic_zapasu]["Kurz_2"] = k_2
+                                mapa_zapasu[klic_zapasu]["O25"] = o25
+                                mapa_zapasu[klic_zapasu]["U25"] = u25
+                                if datum_formatovane: mapa_zapasu[klic_zapasu]["Datum"] = datum_formatovane
+                        else:
+                            # NOVÝ ZÁPAS: Přiřadíme mu nové unikátní ID a založíme ho
+                            max_id += 1
+                            mapa_zapasu[klic_zapasu] = {
+                                "ID": max_id, "Domaci": domaci, "Hoste": hoste, "Datum": datum_formatovane if datum_formatovane else "Čas neupřesněn",
+                                "Kurz_1": k_1, "Kurz_X": k_x, "Kurz_2": k_2, "O05": "", "U05": "", "O15": "", "U15": "",
+                                "O25": o25, "U25": u25, "O35": "", "U35": "", "O45": "", "U45": "", "O55": "", "U55": "",
+                                "Vysledek": "", "Stav": "aktivni"
+                            }
 
-                    for i, klic in enumerate(serazene_klice):
-                        z = sloucene_zapasy[klic]
-                        finilni_datum = z["datum"] if z["datum"] else "Čas neupřesněn"
+                    # 3. Seřadíme zápasy podle ID, abychom udrželi chronologii
+                    vsechny_zapasy_obj = list(mapa_zapasu.values())
+                    try:
+                        vsechny_zapasy_obj = sorted(vsechny_zapasy_obj, key=lambda x: int(x["ID"]))
+                    except: pass
 
-                        nové_zápasy.append([
-                            i + 1, z["domaci"], z["hoste"], finilni_datum, z["k_1"], z["k_x"], z["k_2"],
-                            "", "", "", "", z["o25"], z["u25"], "", "", "", "", "", "", "", "aktivni"
+                    # Převod objektů zpět na čisté řádky pro Google Sheets
+                    finalni_radky = []
+                    for k in vsechny_zapasy_obj:
+                        finalni_radky.append([
+                            k.get("ID"), k.get("Domaci"), k.get("Hoste"), k.get("Datum"),
+                            k.get("Kurz_1"), k.get("Kurz_X"), k.get("Kurz_2"),
+                            k.get("O05",""), k.get("U05",""), k.get("O15",""), k.get("U15",""),
+                            k.get("O25"), k.get("U25"),
+                            k.get("O35",""), k.get("U35",""), k.get("O45",""), k.get("U45",""), k.get("O55",""), k.get("U55",""),
+                            k.get("Vysledek",""), k.get("Stav","aktivni")
                         ])
-                    
-                    if nové_zápasy:
-                        hlavicka_zapasy = ["ID", "Domaci", "Hoste", "Datum", "Kurz_1", "Kurz_X", "Kurz_2", "O05", "U05", "O15", "U15", "O25", "U25", "O35", "U35", "O45", "U45", "O55", "U55", "Vysledek", "Stav"]
-                        sheet_z = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
-                        sheet_z.clear()
-                        sheet_z.append_rows([hlavicka_zapasy] + nové_zápasy)
-                        st.cache_data.clear(); st.success(f"Nahráno {len(nové_zápasy)} zápasů!"); st.rerun()
+
+                    # 4. Bezpečné přepsání celé tabulky (včetně zachování historie)
+                    sheet_z.clear()
+                    sheet_z.append_rows([hlavicka_zapasy] + finalni_radky)
+                    st.cache_data.clear()
+                    st.success("✅ Kurzová nabídka byla bezpečně aktualizována a nové zápasy přidány!")
+                    st.rerun()
 
             st.markdown("---")
 
