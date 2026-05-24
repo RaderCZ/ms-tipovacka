@@ -382,19 +382,19 @@ else:
             img_domaci = f"<img src='https://flagcdn.com/w160/{t_domaci['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_domaci['kod'] != "un" else ""
             img_hoste = f"<img src='https://flagcdn.com/w160/{t_hoste['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_hoste['kod'] != "un" else ""
             
+            # Dynamický text a barva pro středový prvek (Budoucnost vs Výsledek)
+            if je_zapas_ukoncen and z.get('Vysledek'):
+                stred_text = str(z.get('Vysledek'))
+                stred_color = "#FFF200" # Zářivě žlutá Fortuna pro konečné skóre
+            else:
+                stred_text = "VS"
+                stred_color = "#888888" # Šedá pro neodehrané zápasy
+            
             html_vlajky = f"""
             <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
-                <div style='flex: 1; text-align: center;'>
-                    {img_domaci}
-                    <div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div>
-                </div>
-                <div style='flex: 0.5; text-align: center;'>
-                    <h2 style='color: #888888; margin: 0;'>VS</h2>
-                </div>
-                <div style='flex: 1; text-align: center;'>
-                    {img_hoste}
-                    <div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div>
-                </div>
+                <div style='flex: 1; text-align: center;'>{img_domaci}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div></div>
+                <div style='flex: 0.5; text-align: center;'><h2 style='color: {stred_color}; margin: 0; letter-spacing: 0px;'>{stred_text}</h2></div>
+                <div style='flex: 1; text-align: center;'>{img_hoste}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div></div>
             </div>
             """
             st.markdown(html_vlajky, unsafe_allow_html=True)
@@ -626,10 +626,18 @@ else:
                         img_domaci = f"<img src='https://flagcdn.com/w160/{t_domaci['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_domaci['kod'] != "un" else ""
                         img_hoste = f"<img src='https://flagcdn.com/w160/{t_hoste['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_hoste['kod'] != "un" else ""
                         
+                        # Dynamický text a barva pro středový prvek v Historii tipů
+                        if je_zapas_ukoncen and z.get('Vysledek'):
+                            stred_text = str(z.get('Vysledek'))
+                            stred_color = "#FFF200" # Zářivě žlutá Fortuna pro konečné skóre
+                        else:
+                            stred_text = "VS"
+                            stred_color = "#888888"
+                        
                         html_vlajky = f"""
                         <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
                             <div style='flex: 1; text-align: center;'>{img_domaci}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div></div>
-                            <div style='flex: 0.5; text-align: center;'><h2 style='color: #888888; margin: 0;'>VS</h2></div>
+                            <div style='flex: 0.5; text-align: center;'><h2 style='color: {stred_color}; margin: 0; letter-spacing: 0px;'>{stred_text}</h2></div>
                             <div style='flex: 1; text-align: center;'>{img_hoste}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div></div>
                         </div>
                         """
