@@ -358,18 +358,30 @@ else:
     st.sidebar.markdown("---")
     st.sidebar.subheader("🏆 Průběžné pořadí")
     
+    # --- OPRAVENÝ ŽEBŘÍČEK: ABSOLUTNÍ ZAROVNÁNÍ BEZ MARKDOWN CHYB ---
     serazeni_hraci = sorted(UZIVATELE.items(), key=lambda x: x[1]['body'], reverse=True)
     medaile = ["🥇", "🥈", "🥉"]
+    
     for i, (jm, dt) in enumerate(serazeni_hraci):
         znak = medaile[i] if i < len(medaile) else "🏅"
         
-        # Pokud má hráč nastavený status, zformátujeme ho do kurzyvy
-        text_statusu = f"<br><span style='color: #aaa; font-style: italic; font-size: 13px;'>„{dt['status']}“</span>" if dt['status'] else ""
-        
+        # Určíme styl podle toho, zda jde o přihlášeného uživatele (tučná žlutá) nebo ostatní (bílá)
         if jm == aktualni_uzivatel:
-            st.sidebar.markdown(f"**{i+1}. {znak} {jm} — {dt['body']} b.**{text_statusu}", unsafe_allow_html=True)
+            styl_jmena = "font-weight: bold; color: #FFF200; font-size: 16px;"
         else:
-            st.sidebar.markdown(f"{i+1}. {znak} {jm} — {dt['body']} b.{text_statusu}", unsafe_allow_html=True)
+            styl_jmena = "color: #FFFFFF; font-size: 16px;"
+            
+        # Vytvoření textu statusu s mírným odsazením zleva, aby seděl přesně pod jménem
+        text_statusu = f"<div style='color: #aaaaaa; font-style: italic; font-size: 13px; margin-top: 2px; padding-left: 22px;'>„{dt['status']}“</div>" if dt['status'] else ""
+        
+        # Složení celého řádku do jednoho stabilního HTML bloku
+        html_radek = f"""
+        <div style='margin-bottom: 14px; line-height: 1.2;'>
+            <span style='{styl_jmena}'>{i+1}. {znak} {jm} — {dt['body']} b.</span>
+            {text_statusu}
+        </div>
+        """
+        st.sidebar.markdown(html_radek, unsafe_allow_html=True)
 
     vsechny_sazky = nacti_sazky()
     moje_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel", "")) == aktualni_uzivatel]
