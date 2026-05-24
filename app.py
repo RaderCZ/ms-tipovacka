@@ -388,7 +388,7 @@ else:
     data_zapasy = nacti_zapasy()
 
     # ==========================================
-    # 🛠 POMOCNÁ FUNKCE PRO VYKRESLENÍ DETAILU ZÁPASU
+    # 🛠 POMOCNÁ FUNKCE PRO VYKRESLENÍ DETAILU ZÁPASU (S ODPOČTEM ČASU)
     # ==========================================
     def vykresli_detail_zapasu(z, zapas_uzamcen, moje_sazky):
         stavajici_tip = next((s for s in moje_sazky if str(s.get("ID_zapasu")) == str(z["ID"])), None)
@@ -396,9 +396,45 @@ else:
         t_hoste = dej_data_tymu(z['Hoste'])
         has_draw = str(z.get("Kurz_X", "")).strip() != ""
         
-        # Detekce turnajového ukončení zápasu (povel od API nebo z Google tabulky)
         je_zapas_ukoncen = str(z.get("Stav", "")).lower() == "ukonceno"
         skore_text = f" ({z.get('Vysledek', '')})" if z.get('Vysledek') else ""
+        
+        # --- VÝPOČET ODPOČTU DO TITULKU ---
+        odpocet_titulek = ""
+        vnitrni_odpocet_html = ""
+        
+        if not je_zapas_ukoncen and not zapas_uzamcen:
+            try:
+                match_dt = datetime.strptime(f"{z.get('Datum', '')}.2026", "%d.%m. %H:%M.%Y")
+                lock_dt = match_dt - timedelta(minutes=1) # Tipy se zamykají minutu před výkopem
+                aktualni_cas = datetime.utcnow() + timedelta(hours=2) # Stabilní CZ čas
+                diff = lock_dt - aktualni_cas
+                
+                if diff.total_seconds() > 0:
+                    dny = diff.days
+                    hodiny, sekundy = divmod(diff.seconds, 3600)
+                    minuty, _ = divmod(sekundy, 60)
+                    
+                    # Nastavení barev a textů podle urgentnosti
+                    if dny > 0:
+                        cas_text = f"{dny} d. {hodiny} hod."
+                        barva = "#888888" # Nenápadná šedá pro zápasy v dalších dnech
+                    elif hodiny > 0:
+                        cas_text = f"{hodiny} hod. {minuty} min."
+                        barva = "#FFF200" # Fortuna žlutá (hraje se dneska!)
+                        odpocet_titulek = f" ⏱️ ({hodiny}h {minuty}m)" # Přidáme i do zavřeného řádku
+                    else:
+                        cas_text = f"{minuty} minut!!"
+                        barva = "#FF4B4B" # Výstražná červená (poslední hodina!)
+                        odpocet_titulek = f" 🚨 ({minuty}m!)"
+                    
+                    vnitrni_odpocet_html = f"""
+                    <div style='text-align: center; margin-top: -10px; margin-bottom: 15px; font-size: 13px; color: {barva}; font-weight: 500;'>
+                        ⏳ Do uzamčení tipů zbývá: <span style='font-weight: bold; text-transform: uppercase;'>{cas_text}</span>
+                    </div>
+                    """
+            except:
+                pass
         
         # Dynamická tvorba titulku podle reálného stavu zápasu
         if je_zapas_ukoncen:
@@ -406,7 +442,7 @@ else:
         elif zapas_uzamcen:
             titulek_radku = f"🔒 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (TIPY UZAVŘENY)"
         else:
-            titulek_radku = f"📅 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']}"
+            titulek_radku = f"📅 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']}{odpocet_titulek}"
         
         with st.expander(titulek_radku):
             st.write("")
@@ -417,13 +453,12 @@ else:
             img_domaci = f"<img src='https://flagcdn.com/w160/{t_domaci['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_domaci['kod'] != "un" else ""
             img_hoste = f"<img src='https://flagcdn.com/w160/{t_hoste['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_hoste['kod'] != "un" else ""
             
-            # Dynamický text a barva pro středový prvek (Budoucnost vs Výsledek)
             if je_zapas_ukoncen and z.get('Vysledek'):
                 stred_text = str(z.get('Vysledek'))
-                stred_color = "#FFF200" # Zářivě žlutá Fortuna pro konečné skóre
+                stred_color = "#FFF200"
             else:
                 stred_text = "VS"
-                stred_color = "#888888" # Šedá pro neodehrané zápasy
+                stred_color = "#888888"
             
             html_vlajky = f"""
             <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
@@ -435,6 +470,10 @@ else:
             st.markdown(html_vlajky, unsafe_allow_html=True)
             st.markdown("---")
             # --- KONEC: VLAJKY VEDLE SEBE ---
+            
+            # Vykreslení vnitřního odpočtu (pokud je zápas aktivní)
+            if vnitrni_odpocet_html:
+                st.markdown(vnitrni_odpocet_html, unsafe_allow_html=True)
             
             if zapas_uzamcen:
                 if stavajici_tip:
