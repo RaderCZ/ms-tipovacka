@@ -560,7 +560,7 @@ else:
                         st.success("Tiket byl podán!")
                         st.rerun()
 
-    tab1, tab2, tab3 = st.tabs(["📅 Kurzová nabídka", "📜 Moje tipy", "⚙️ Admin"])
+    tab1, tab2, tab3, tab4 = st.tabs(["📅 Kurzová nabídka", "📜 Moje tipy", "📊 Statistiky", "⚙️ Admin"])
 
     # ==========================================
     # ZÁLOŽKA 1: KURZOVÁ NABÍDKA
@@ -752,13 +752,177 @@ else:
                             else: st.caption("Nikdo jiný z hráčů na tento zápas nenasadil žádný tip.")                    
 
     # ==========================================
-    # ZÁLOŽKA 3: ADMINISTRACE (OPRAVENÁ VERZE)
+    # ZÁLOŽKA 3: 📊 STATISTIKY (PRO TÁTU)
     # ==========================================
     with tab3:
+        st.subheader("📊 Statistiky a turnajová analýza")
+        st.write("Data, procenta a sázkařské trendy naší trojice vypočítané přímo z historie tiketů.")
+
+        # --- PŘÍPRAVA DATASETŮ ---
+        ukoncene_zapasy = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
+        celkem_odehrano = len(ukoncene_zapasy)
+
+        # Výpočty pro Turnajový radar
+        goly_celkem = 0
+        over_25 = 0
+        under_25 = 0
+
+        for zp in ukoncene_zapasy:
+            try:
+                hg, ag = map(int, str(zp.get("Vysledek")).split(":"))
+                total_g = hg + ag
+                goly_celkem += total_g
+                if total_g > 2.5: over_25 += 1
+                else: under_25 += 1
+            except: pass
+
+        avg_goly = round(goly_celkem / celkem_odehrano, 2) if celkem_odehrano > 0 else 0.0
+        p_over = round((over_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
+        p_under = round((under_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
+
+        # --- SEKCE A: TURNAJOVÝ RADAR ---
+        st.markdown("### 🏟️ Statistiky turnaje")
+        if celkem_odehrano == 0:
+            st.info("ℹ️ Turnajové statistiky budou dostupné, jakmile se vyhodnotí alespoň jeden zápas.")
+        else:
+            c1, c2, c3 = st.columns(3)
+            with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano} ⚽")
+            with c2: st.metric("Gólový průměr ligy", f"{avg_goly} 🔥")
+            with c3: st.metric("Zápasy s 3+ góly", f"{p_over} %")
+
+            # Grafický ukazatel Over/Under
+            st.markdown(f"""
+            <div style='width: 100%; background-color: #2d2d2d; border-radius: 4px; display: flex; height: 24px; margin: 15px 0; overflow: hidden;'>
+                <div style='width: {p_over}%; background-color: #FFF200; color: #000; font-weight: bold; text-align: center; font-size: 12px; line-height: 24px;'>OVER 2.5 ({p_over}%)</div>
+                <div style='width: {p_under}%; background-color: #888888; color: #fff; font-weight: bold; text-align: center; font-size: 12px; line-height: 24px;'>UNDER 2.5 ({p_under}%)</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("---")
+
+        # --- SEKCE B: SÁZKAŘSKÁ DNA (TŘI KARTY VEDLE SEBE) ---
+        st.markdown("### 🧬 Sázkařská DNA")
+        
+        # Inicializace statistik
+        stats_hraci = {}
+        for h in UZIVATELE.keys():
+            stats_hraci[h] = {
+                "t_1x2_c": 0, "t_1x2_v": 0, "t_g_c": 0, "t_g_v": 0,
+                "max_k": 0.0, "max_k_zapas": "-",
+                "over_sazky": 0, "under_sazky": 0,
+                "historie_vysledku_chronologicky": [] # Pro výpočet formy
+            }
+
+        # Řazení sázek podle ID zápasu pro přesný výpočet formy v čase
+        sazky_serazene = sorted(vsechny_sazky, key=lambda x: int(x.get("ID_zapasu", 0)))
+
+        for s in sazky_serazene:
+            h = s.get("Uzivatel")
+            if h not in stats_hraci: continue
+            if str(s.get("Stav_Tipu")).lower() != "vyhodnoceno": continue
+            
+            # 1X2 příležitost
+            tip_1x2 = str(s.get("Tip_1X2"))
+            if tip_1x2 != "Nenasazeno":
+                stats_hraci[h]["t_1x2_c"] += 1
+                is_win = str(s.get("Stav_1X2")).lower() == "vyhra"
+                stats_hraci[h]["historie_vysledku_chronologicky"].append(is_win)
+                if is_win:
+                    stats_hraci[h]["t_1x2_v"] += 1
+                    k = float(s.get("Kurz_1X2", 0))
+                    if k > stats_hraci[h]["max_k"]:
+                        stats_hraci[h]["max_k"] = k
+                        stats_hraci[h]["max_k_zapas"] = str(s.get("Zapas", "-"))
+
+            # Gólová příležitost
+            tip_goly = str(s.get("Tip_Goly"))
+            if tip_goly != "Nenasazeno":
+                stats_hraci[h]["t_g_c"] += 1
+                if tip_goly == "Více": stats_hraci[h]["over_sazky"] += 1
+                elif tip_goly == "Méně": stats_hraci[h]["under_sazky"] += 1
+                
+                is_win_g = str(s.get("Stav_Goly")).lower() == "vyhra"
+                stats_hraci[h]["historie_vysledku_chronologicky"].append(is_win_g)
+                if is_win_g:
+                    stats_hraci[h]["t_g_v"] += 1
+                    k = float(s.get("Kurz_Goly", 0))
+                    if k > stats_hraci[h]["max_k"]:
+                        stats_hraci[h]["max_k"] = k
+                        stats_hraci[h]["max_k_zapas"] = str(s.get("Zapas", "-"))
+
+        # Vykreslení karet přes st.columns
+        cols_karty = st.columns(3)
+        jmena_hracu = list(stats_hraci.keys())
+
+        for idx, h in enumerate(jmena_hracu):
+            dt = stats_hraci[h]
+            celkem_tipu = dt["t_1x2_c"] + dt["t_g_c"]
+            celkem_vyher = dt["t_1x2_v"] + dt["t_g_v"]
+            
+            # Výpočty procent
+            acc_celkova = round((celkem_vyher / celkem_tipu) * 100, 1) if celkem_tipu > 0 else 0.0
+            acc_1x2 = round((dt["t_1x2_v"] / dt["t_1x2_c"]) * 100, 1) if dt["t_1x2_c"] > 0 else 0.0
+            acc_goly = round((dt["t_g_v"] / dt["t_g_c"]) * 100, 1) if dt["t_g_c"] > 0 else 0.0
+            
+            celkem_g_sazek = dt["over_sazky"] + dt["under_sazky"]
+            p_over_sazek = round((dt["over_sazky"] / celkem_g_sazek) * 100, 1) if celkem_g_sazek > 0 else 50.0
+            
+            # Výpočet nejdelší zelené šňůry (Forma)
+            max_streak = 0
+            current_streak = 0
+            for outcome in dt["historie_vysledku_chronologicky"]:
+                if outcome:
+                    current_streak += 1
+                    if current_streak > max_streak: max_streak = current_streak
+                else:
+                    current_streak = 0
+            
+            zapas_kratky = dt["max_k_zapas"].split("-")[0][:12] if dt["max_k"] > 0 else "-"
+            zivotni_trefa = f"{dt['max_k']} ({zapas_kratky})" if dt["max_k"] > 0 else "-"
+
+            # Označení přihlášeného uživatele rámečkem
+            border_style = "border: 2px solid #FFF200;" if h == aktualni_uzivatel else "border: 1px solid #2d2d2d;"
+            bg_color = "#1c1c13" if h == aktualni_uzivatel else "#1a1a1a"
+
+            with cols_karty[idx]:
+                st.markdown(f"""
+                <div style='background-color: {bg_color}; padding: 18px; border-radius: 8px; {border_style} text-align: center;'>
+                    <h2 style='margin: 0 0 5px 0; color: #FFF200; font-size: 22px;'>{h}</h2>
+                    <div style='font-size: 28px; font-weight: bold; color: #fff; margin-bottom: 15px;'>{acc_celkova} % <span style='font-size:12px; color:#aaa; font-weight:normal;'>úspěšnost</span></div>
+                    
+                    <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
+                        <span style='color:#aaa;'>Přesnost 1X2:</span>
+                        <span style='font-weight:bold; color:#a2ffaf;'>{acc_1x2} %</span>
+                    </div>
+                    <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
+                        <span style='color:#aaa;'>Přesnost Gólů:</span>
+                        <span style='font-weight:bold; color:#a2ffaf;'>{acc_goly} %</span>
+                    </div>
+                    <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
+                        <span style='color:#aaa;'>Gólový optimismus:</span>
+                        <span style='font-weight:bold; color:#ffb77c;'>{p_over_sazek} % OVER</span>
+                    </div>
+                    <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
+                        <span style='color:#aaa;'>Životní trefa:</span>
+                        <span style='font-weight:bold; color:#FFF200;'>{zivotni_trefa}</span>
+                    </div>
+                    <div style='display:flex; justify-content:space-between; font-size:13px;'>
+                        <span style='color:#aaa;'>Max. šňůra výher:</span>
+                        <span style='font-weight:bold; color:#5cd6ff;'>🟢 {max_streak} v řadě</span>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+
+    # ==========================================
+    # ZÁLOŽKA 4: ⚙️ ADMINISTRACE
+    # ==========================================
+    with tab4:
         ADMIN_JMENO = "Rader"
         API_KEY_ODDS = "f849ec6e23b62fbf2f9df1eb82ee9915"
         
-        if aktualni_uzivatel != ADMIN_JMENO: st.warning("Sem mají přístup pouze administrátoři.")
+        if aktualni_uzivatel != ADMIN_JMENO: 
+            st.warning("Sem mají přístup pouze administrátoři.")
         else:
             st.subheader("⚙️ Ovládací panel administrátora")
             if st.button("🔄 Stáhnout čerstvé zápasy a kurzy", type="secondary"):
@@ -769,12 +933,10 @@ else:
                     if odpoved.status_code != 200: st.error(f"Chyba API: {odpoved.text}"); st.stop()
                     data_api = odpoved.json()
                     
-                    # 1. Načteme stávající zápasy z tabulky, abychom je NESMAZALI
                     sheet_z = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
                     zapasy_stavejici = sheet_z.get_all_records()
                     hlavicka_zapasy = ["ID", "Domaci", "Hoste", "Datum", "Kurz_1", "Kurz_X", "Kurz_2", "O05", "U05", "O15", "U15", "O25", "U25", "O35", "U35", "O45", "U45", "O55", "U55", "Vysledek", "Stav"]
                     
-                    # Najdeme nejvyšší stávající ID a vytvoříme si index zápasů podle jména
                     max_id = 0
                     mapa_zapasu = {}
                     for zp in zapasy_stavejici:
@@ -785,7 +947,6 @@ else:
                         klic = f"{zp.get('Domaci')} vs {zp.get('Hoste')}"
                         mapa_zapasu[klic] = zp
 
-                    # 2. Zpracujeme čerstvá data z API
                     for zapas in data_api:
                         domaci, hoste = zapas["home_team"], zapas["away_team"]
                         klic_zapasu = f"{domaci} vs {hoste}"
@@ -796,7 +957,6 @@ else:
                             cas_cz = datetime.strptime(cas_api_str, "%Y-%m-%dT%H:%M:%SZ") + timedelta(hours=2)
                             datum_formatovane = cas_cz.strftime("%d.%m. %H:%M")
 
-                        # Vytáhneme kurzy z API
                         k_1, k_x, k_2, o25, u25 = "", "", "", "", ""
                         if zapas.get("bookmakers"):
                             for trh in zapas["bookmakers"][0]["markets"]:
@@ -812,7 +972,6 @@ else:
                                             elif t["name"] == "Under": u25 = t["price"]
 
                         if klic_zapasu in mapa_zapasu:
-                            # ZÁPAS UŽ MÁME: Pokud je stále aktivní, pouze aktualizujeme kurzy a čas
                             if str(mapa_zapasu[klic_zapasu].get("Stav")).lower() == "aktivni":
                                 mapa_zapasu[klic_zapasu]["Kurz_1"] = k_1
                                 mapa_zapasu[klic_zapasu]["Kurz_X"] = k_x
@@ -821,7 +980,6 @@ else:
                                 mapa_zapasu[klic_zapasu]["U25"] = u25
                                 if datum_formatovane: mapa_zapasu[klic_zapasu]["Datum"] = datum_formatovane
                         else:
-                            # NOVÝ ZÁPAS: Přiřadíme mu nové unikátní ID a založíme ho
                             max_id += 1
                             mapa_zapasu[klic_zapasu] = {
                                 "ID": max_id, "Domaci": domaci, "Hoste": hoste, "Datum": datum_formatovane if datum_formatovane else "Čas neupřesněn",
@@ -830,13 +988,10 @@ else:
                                 "Vysledek": "", "Stav": "aktivni"
                             }
 
-                    # 3. Seřadíme zápasy podle ID, abychom udrželi chronologii
                     vsechny_zapasy_obj = list(mapa_zapasu.values())
-                    try:
-                        vsechny_zapasy_obj = sorted(vsechny_zapasy_obj, key=lambda x: int(x["ID"]))
+                    try: vsechny_zapasy_obj = sorted(vsechny_zapasy_obj, key=lambda x: int(x["ID"]))
                     except: pass
 
-                    # Převod objektů zpět na čisté řádky pro Google Sheets
                     finalni_radky = []
                     for k in vsechny_zapasy_obj:
                         finalni_radky.append([
@@ -848,12 +1003,9 @@ else:
                             k.get("Vysledek",""), k.get("Stav","aktivni")
                         ])
 
-                    # 4. Bezpečné přepsání celé tabulky (včetně zachování historie)
                     sheet_z.clear()
                     sheet_z.append_rows([hlavicka_zapasy] + finalni_radky)
-                    st.cache_data.clear()
-                    st.success("✅ Kurzová nabídka byla bezpečně aktualizována a nové zápasy přidány!")
-                    st.rerun()
+                    st.cache_data.clear(); st.success("✅ Kurzová nabídka byla bezpečně aktualizována!"); st.rerun()
 
             st.markdown("---")
 
@@ -861,12 +1013,11 @@ else:
                 SPORT = "soccer_usa_mls"
                 url_scores = f"https://api.the-odds-api.com/v4/sports/{SPORT}/scores/?apiKey={API_KEY_ODDS}&daysFrom=3"
                 
-                with st.spinner("Zjišťuji výsledky z API a Google Tabulky..."):
+                with st.spinner("Zjišťuji výsledky z API..."):
                     odpoved_scores = requests.get(url_scores)
                     if odpoved_scores.status_code != 200: st.error(f"Chyba API: {odpoved_scores.text}"); st.stop()
                     data_scores = odpoved_scores.json()
                     
-                    # 1. Získáme oficiálně dokončené zápasy z API
                     dokoncene = {}
                     for z in data_scores:
                         if z.get("completed") and len(z.get("scores", [])) == 2:
@@ -875,7 +1026,6 @@ else:
                             g_h = next((int(s["score"]) for s in z["scores"] if s["name"] != d_tym), 0)
                             dokoncene[f"{d_tym} vs {a_tym}"] = {"home": g_d, "away": g_h}
                     
-                    # 2. Načteme tabulky
                     sheet_z = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
                     zapasy_z_tabulky = sheet_z.get_all_records()
                     hlavicka_z = list(zapasy_z_tabulky[0].keys()) if zapasy_z_tabulky else []
@@ -887,7 +1037,6 @@ else:
                     body_pro_hrace = {}
                     zmeny_v_zapasech = False
                     
-                    # --- KROK A: AKTUALIZACE VŠECH ZÁPASŮ (NEZÁVISLE NA SÁZKÁCH) ---
                     for j, zp in enumerate(zapasy_z_tabulky):
                         if str(zp.get("Stav")).lower() == "aktivni":
                             z_id = str(zp.get("ID"))
@@ -896,11 +1045,9 @@ else:
                             klic_pro_hledani = f"{jmeno_domaci} vs {jmeno_hoste}"
                             manualni_vysledek = str(zp.get("Vysledek", "")).strip()
                             
-                            # Kontrola manuálního skóre s dvojtečkou
                             if ":" in manualni_vysledek:
                                 zapasy_z_tabulky[j]["Stav"] = "ukonceno"
                                 zmeny_v_zapasech = True
-                            # Kontrola automatického skóre z API
                             elif klic_pro_hledani in dokoncene:
                                 h_g = dokoncene[klic_pro_hledani]["home"]
                                 a_g = dokoncene[klic_pro_hledani]["away"]
@@ -908,10 +1055,8 @@ else:
                                 zapasy_z_tabulky[j]["Stav"] = "ukonceno"
                                 zmeny_v_zapasech = True
                     
-                    # Vytvoříme si novou mapu zápasů už s doplněnými výsledky
                     mapa_zapasu = {str(zp["ID"]): zp for zp in zapasy_z_tabulky}
                     
-                    # --- KROK B: VYHODNOCENÍ EXISTUJÍCÍCH SÁZEK ---
                     for i, s in enumerate(sazky_list):
                         if str(s.get("Stav_Tipu")).lower() == "ceka":
                             z_id = str(s.get("ID_zapasu"))
@@ -925,7 +1070,6 @@ else:
                                     total_g = h_g + a_g
                                     body_zisk = 0.0
                                     
-                                    # Vyhodnocení 1X2
                                     t_1x2 = str(s["Tip_1X2"])
                                     v_1x2 = "prohra"
                                     skutecny_vysledek = "1" if h_g > a_g else ("2" if h_g < a_g else "X")
@@ -935,7 +1079,6 @@ else:
                                         v_1x2 = "vyhra"
                                         body_zisk += float(s["Kurz_1X2"])
                                     
-                                    # Vyhodnocení gólů
                                     t_g = str(s["Tip_Goly"])
                                     v_g = "prohra"
                                     if t_g == "Více" and total_g > 2.5: 
@@ -954,7 +1097,6 @@ else:
                                     body_pro_hrace[hrace] = body_pro_hrace.get(hrace, 0.0) + body_zisk
                                 except: pass
                     
-                    # 4. Zápisy změn zpět do tabulek
                     data_sazky_zapis = [list(r.values()) for r in sazky_list]
                     sheet_s.clear()
                     sheet_s.append_rows([hlavicka_s] + data_sazky_zapis)
@@ -972,9 +1114,6 @@ else:
                             if jm in body_pro_hrace:
                                 novy_sum = float(r["Body"]) + body_pro_hrace[jm]
                                 sheet_u.update_cell(i + 2, 3, round(novy_sum, 2))
-                                st.balloons()
-                                st.success(f"🎉 {jm} získal {round(body_pro_hrace[jm], 2)} bodů!")
+                                st.balloons(); st.success(f"🎉 {jm} získal {round(body_pro_hrace[jm], 2)} bodů!")
                     
-                    st.cache_data.clear()
-                    st.success("✅ Všechny dohrané zápasy v programu byly úspěšně uzavřeny!")
-                    st.rerun()
+                    st.cache_data.clear(); st.success("✅ Všechny dohrané zápasy vyhodnoceny!"); st.rerun()
