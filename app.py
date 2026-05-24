@@ -240,7 +240,8 @@ for radek in data_uzivatele:
     jmeno = str(radek["Jméno"])
     heslo = str(radek["Heslo"])
     body = radek["Body"]
-    UZIVATELE[jmeno] = {"heslo": heslo, "body": body}
+    status = str(radek.get("Status", "")).strip() # Načte status, pokud existuje
+    UZIVATELE[jmeno] = {"heslo": heslo, "body": body, "status": status}
 
 # --- HLAVNÍ TITULEK ---
 st.title("⚽ MS 26 TIPOVAČKA")
@@ -336,6 +337,24 @@ else:
         st.session_state["uzivatel"] = ""
         st.rerun()
         
+    # --- BANTER BOX: NASTAVENÍ STATUSU ---
+    st.sidebar.write("")
+    stuj_status = UZIVATELE[aktualni_uzivatel].get("status", "")
+    novy_status = st.sidebar.text_input("💬 Tvůj rýpavý status:", value=stuj_status, max_chars=60, key="banter_input")
+    
+    if novy_status != stuj_status:
+        if st.sidebar.button("💾 Uložit status", type="secondary", key="btn_uložit_status"):
+            with st.spinner("Ukládám status..."):
+                sheet_u = client.open("Mistrovstvi_Tipovacka").worksheet("Uzivatele")
+                u_list = sheet_u.get_all_records()
+                for i, r in enumerate(u_list):
+                    if str(r["Jméno"]) == aktualni_uzivatel:
+                        # Sloupec D je 4. sloupec v tabulce
+                        sheet_u.update_cell(i + 2, 4, novy_status)
+                        break
+            st.cache_data.clear()
+            st.rerun()    
+        
     st.sidebar.markdown("---")
     st.sidebar.subheader("🏆 Průběžné pořadí")
     
@@ -343,10 +362,14 @@ else:
     medaile = ["🥇", "🥈", "🥉"]
     for i, (jm, dt) in enumerate(serazeni_hraci):
         znak = medaile[i] if i < len(medaile) else "🏅"
+        
+        # Pokud má hráč nastavený status, zformátujeme ho do kurzyvy
+        text_statusu = f"<br><span style='color: #aaa; font-style: italic; font-size: 13px;'>„{dt['status']}“</span>" if dt['status'] else ""
+        
         if jm == aktualni_uzivatel:
-            st.sidebar.markdown(f"**{i+1}\. {znak} {jm} — {dt['body']} b.**")
+            st.sidebar.markdown(f"**{i+1}. {znak} {jm} — {dt['body']} b.**{text_statusu}", unsafe_allow_html=True)
         else:
-            st.sidebar.markdown(f"{i+1}\. {znak} {jm} — {dt['body']} b.")
+            st.sidebar.markdown(f"{i+1}. {znak} {jm} — {dt['body']} b.{text_statusu}", unsafe_allow_html=True)
 
     vsechny_sazky = nacti_sazky()
     moje_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel", "")) == aktualni_uzivatel]
