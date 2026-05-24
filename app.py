@@ -361,8 +361,17 @@ else:
         t_hoste = dej_data_tymu(z['Hoste'])
         has_draw = str(z.get("Kurz_X", "")).strip() != ""
         
-        titulek_radku = f"📅 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']}"
-        if zapas_uzamcen: titulek_radku = f"🔒 {titulek_radku} (TIPY UZAVŘENY)"
+        # Detekce turnajového ukončení zápasu (povel od API nebo z Google tabulky)
+        je_zapas_ukoncen = str(z.get("Stav", "")).lower() == "ukonceno"
+        skore_text = f" ({z.get('Vysledek', '')})" if z.get('Vysledek') else ""
+        
+        # Dynamická tvorba titulku podle reálného stavu zápasu
+        if je_zapas_ukoncen:
+            titulek_radku = f"✅ {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']}{skore_text} (ODEHRÁNO)"
+        elif zapas_uzamcen:
+            titulek_radku = f"🔒 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (TIPY UZAVŘENY)"
+        else:
+            titulek_radku = f"📅 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']}"
         
         with st.expander(titulek_radku):
             st.write("")
