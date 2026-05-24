@@ -751,11 +751,10 @@ else:
                                     st.write(f"👤 **{t['Uzivatel']}**: {tip_1x2_text} ({t['Kurz_1X2']}) | {tip_goly_text} ({t['Kurz_Goly']})")
                             else: st.caption("Nikdo jiný z hráčů na tento zápas nenasadil žádný tip.")                    
 
-   # ==========================================
+    # ==========================================
     # ZÁLOŽKA 3: 📊 STATISTIKY (PRO TÁTU)
     # ==========================================
     with tab3:
-        # --- OPRAVA NADPISU: Začínáme rovnou turnajem bez balastu ---
         st.subheader("🏟️ Statistiky turnaje")
 
         # --- PŘÍPRAVA DATASETŮ ---
@@ -766,19 +765,26 @@ else:
         goly_celkem = 0
         over_25 = 0
         under_25 = 0
+        btts_celkem = 0 # Počítadlo pro zápasy, kde daly gól oba týmy
 
         for zp in ukoncene_zapasy:
             try:
                 hg, ag = map(int, str(zp.get("Vysledek")).split(":"))
                 total_g = hg + ag
                 goly_celkem += total_g
+                
+                # Over/Under analýza
                 if total_g > 2.5: over_25 += 1
                 else: under_25 += 1
+                
+                # BTTS analýza (oba týmy skórovaly)
+                if hg > 0 and ag > 0: btts_celkem += 1
             except: pass
 
         avg_goly = round(goly_celkem / celkem_odehrano, 2) if celkem_odehrano > 0 else 0.0
         p_over = round((over_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
         p_under = round((under_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
+        p_btts = round((btts_celkem / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
 
         if celkem_odehrano == 0:
             st.info("ℹ️ Turnajové statistiky budou dostupné, jakmile se vyhodnotí alespoň jeden zápas.")
@@ -786,9 +792,9 @@ else:
             c1, c2, c3 = st.columns(3)
             with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano} ⚽")
             with c2: st.metric("Gólový průměr ligy", f"{avg_goly} 🔥")
-            with c3: st.metric("Zápasy s 3+ góly", f"{p_over} %")
+            with c3: st.metric("Zápasy, kdy skórovaly oba týmy", f"{p_btts} %")
 
-            # Grafický ukazatel Over/Under
+            # Grafický ukazatel Over/Under (zde ta informace dává smysl)
             st.markdown(f"""
             <div style='width: 100%; background-color: #2d2d2d; border-radius: 4px; display: flex; height: 24px; margin: 15px 0; overflow: hidden;'>
                 <div style='width: {p_over}%; background-color: #FFF200; color: #000; font-weight: bold; text-align: center; font-size: 12px; line-height: 24px;'>OVER 2.5 ({p_over}%)</div>
@@ -875,7 +881,6 @@ else:
             border_style = "border: 2px solid #FFF200;" if h == aktualni_uzivatel else "border: 1px solid #2d2d2d;"
             bg_color = "#1c1c13" if h == aktualni_uzivatel else "#1a1a1a"
 
-            # --- OPRAVA: Všechny vnitřní HTML řádky spojeny do jedné čisté lajny bez prázdných míst ---
             html_karta = f"""<div style='background-color: {bg_color}; padding: 18px; border-radius: 8px; {border_style} text-align: center;'><h2 style='margin: 0 0 5px 0; color: #FFF200; font-size: 22px;'>{h}</h2><div style='font-size: 28px; font-weight: bold; color: #fff; margin-bottom: 15px;'>{acc_celkova} % <span style='font-size:12px; color:#aaa; font-weight:normal;'>úspěšnost</span></div><div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'><span style='color:#aaa;'>Přesnost 1X2:</span><span style='font-weight:bold; color:#a2ffaf;'>{acc_1x2} %</span></div><div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'><span style='color:#aaa;'>Přesnost Gólů:</span><span style='font-weight:bold; color:#a2ffaf;'>{acc_goly} %</span></div><div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'><span style='color:#aaa;'>Optimismus:</span><span style='font-weight:bold; color:#ffb77c;'>{p_over_sazek} % OVER</span></div><div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'><span style='color:#aaa;'>Životní trefa:</span><span style='font-weight:bold; color:#FFF200;'>{zivotni_trefa}</span></div><div style='display:flex; justify-content:space-between; font-size:13px;'><span style='color:#aaa;'>Max. šňůra výher:</span><span style='font-weight:bold; color:#5cd6ff;'>🟢 {max_streak} v řadě</span></div></div>"""
             
             with cols_karty[idx]:
