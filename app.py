@@ -340,7 +340,7 @@ else:
     # --- BANTER BOX: NASTAVENÍ STATUSU ---
     st.sidebar.write("")
     stuj_status = UZIVATELE[aktualni_uzivatel].get("status", "")
-    novy_status = st.sidebar.text_input("💬 Tvůj rýpavý status:", value=stuj_status, max_chars=60, key="banter_input")
+    novy_status = st.sidebar.text_input("💬 Rýpni si do ostatních:", value=stuj_status, max_chars=60, key="banter_input")
     
     if novy_status != stuj_status:
         if st.sidebar.button("💾 Uložit status", type="secondary", key="btn_uložit_status"):
