@@ -722,21 +722,24 @@ else:
             st.markdown("---")
 
             if st.button("🏆 Vyhodnotit výsledky zápasů a rozdat body", type="secondary"):
-                SPORT = "soccer_usa_mls"
+                SPORT = "soccer_usa_mls" # 🔴 PRO JISTOTU ZKONTROLUJ, ŽE JE TU MLS
                 url_scores = f"https://api.the-odds-api.com/v4/sports/{SPORT}/scores/?apiKey={API_KEY_ODDS}&daysFrom=3"
                 with st.spinner("Vyhodnocuji..."):
                     odpoved_scores = requests.get(url_scores)
                     if odpoved_scores.status_code != 200: st.error(f"Chyba API: {odpoved_scores.text}"); st.stop()
                     data_scores = odpoved_scores.json()
+                    
+                    # 1. ZMĚNA: Párujeme podle jmen týmů, nikoliv podle ID!
                     dokoncene = {}
                     for z in data_scores:
                         if z.get("completed") and len(z.get("scores", [])) == 2:
                             d_tym = z["home_team"]
+                            a_tym = z["away_team"]
                             g_d = next((int(s["score"]) for s in z["scores"] if s["name"] == d_tym), 0)
                             g_h = next((int(s["score"]) for s in z["scores"] if s["name"] != d_tym), 0)
-                            dokoncene[z["id"]] = {"home": g_d, "away": g_h}
+                            # Vytvoříme klíč "Domaci vs Hoste"
+                            dokoncene[f"{d_tym} vs {a_tym}"] = {"home": g_d, "away": g_h}
                     
-                    # OPRAVENO: Správný název listu v mapování, aby to nevyhodilo error na neexistující list
                     zapasy_z_tabulky = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy").get_all_records()
                     mapa_zapasu = {str(zp["ID"]): zp for zp in zapasy_z_tabulky}
                     sheet_s = client.open("Mistrovstvi_Tipovacka").worksheet("Sázky")
@@ -748,12 +751,19 @@ else:
                         if str(s.get("Stav_Tipu")).lower() == "ceka":
                             z_id = str(s.get("ID_zapasu"))
                             info_zapas = mapa_zapasu.get(z_id, {})
+                            
+                            # 2. ZMĚNA: Rekonstrukce jmenného klíče z tabulky
+                            jmeno_domaci = info_zapas.get("Domaci", "")
+                            jmeno_hoste = info_zapas.get("Hoste", "")
+                            klic_pro_hledani = f"{jmeno_domaci} vs {jmeno_hoste}"
+                            
                             has_draw = str(info_zapas.get("Kurz_X", "")).strip() != ""
                             manualni_vysledek = str(info_zapas.get("Vysledek", "")).strip()
                             
-                            if z_id in dokoncene or manualni_vysledek in ["1", "X", "2"]:
-                                h_g = dokoncene[z_id]["home"] if z_id in dokoncene else 0
-                                a_g = dokoncene[z_id]["away"] if z_id in dokoncene else 0
+                            # 3. ZMĚNA: Porovnáváme klic_pro_hledani s tím, co poslalo API
+                            if klic_pro_hledani in dokoncene or manualni_vysledek in ["1", "X", "2"]:
+                                h_g = dokoncene[klic_pro_hledani]["home"] if klic_pro_hledani in dokoncene else 0
+                                a_g = dokoncene[klic_pro_hledani]["away"] if klic_pro_hledani in dokoncene else 0
                                 total_g = h_g + a_g
                                 body_zisk = 0.0
                                 t_1x2 = str(s["Tip_1X2"])
@@ -761,7 +771,7 @@ else:
                                 
                                 skutecny_vysledek = ""
                                 if manualni_vysledek in ["1", "X", "2"]: skutecny_vysledek = manualni_vysledek
-                                elif z_id in dokoncene:
+                                elif klic_pro_hledani in dokoncene:
                                     if h_g > a_g: skutecny_vysledek = "1"
                                     elif h_g < a_g: skutecny_vysledek = "2"
                                     else: skutecny_vysledek = "X"
@@ -769,7 +779,7 @@ else:
                                 if not has_draw and skutecny_vysledek == "X" and manualni_vysledek not in ["1", "2"]: continue
                                 if t_1x2 == skutecny_vysledek: v_1x2 = "vyhra"; body_zisk += float(s["Kurz_1X2"])
                                 
-                                if z_id in dokoncene:
+                                if klic_pro_hledani in dokoncene:
                                     t_g = str(s["Tip_Goly"])
                                     v_g = "prohra"
                                     if t_g == "Více" and total_g > 2.5: v_g = "vyhra"; body_zisk += float(s["Kurz_Goly"])
