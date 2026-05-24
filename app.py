@@ -791,7 +791,7 @@ else:
         else:
             c1, c2, c3 = st.columns(3)
             with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano} ⚽")
-            with c2: st.metric("Gólový průměr ligy", f"{avg_goly} 🔥")
+            with c2: st.metric("Gólový průměr", f"{avg_goly} 🔥")
             with c3: st.metric("Zápasy, kdy skórovaly oba týmy", f"{p_btts} %")
 
             # Grafický ukazatel Over/Under (zde ta informace dává smysl)
