@@ -588,20 +588,28 @@ else:
                 zapas_uzamcen = False
                 try:
                     match_dt = datetime.strptime(f"{z_datum_str}.2026", "%d.%m. %H:%M.%Y")
-                    # Místo datetime.now() používáme náš aktualni_cas
                     if aktualni_cas >= (match_dt - timedelta(minutes=1)): zapas_uzamcen = True
                 except: pass
                 
                 stavajici_tip = next((s for s in moje_sazky if str(s.get("ID_zapasu")) == str(z["ID"])), None)
-                if zapas_uzamcen or stavajici_tip:
+                je_zapas_ukoncen = str(z.get("Stav", "")).lower() == "ukonceno"
+                
+                # Rozšířená podmínka: Zobrazíme, pokud zápas začal, byl vsazen, NEBO je už ukončený
+                if zapas_uzamcen or stavajici_tip or je_zapas_ukoncen:
                     t_domaci = dej_data_tymu(z['Domaci'])
                     t_hoste = dej_data_tymu(z['Hoste'])
                     has_draw = str(z.get("Kurz_X", "")).strip() != ""
                     is_vyhodnoceno = stavajici_tip and str(stavajici_tip.get("Stav_Tipu", "")).lower() == "vyhodnoceno"
                     
-                    if is_vyhodnoceno: titulek_radku = f"✅ {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (+{stavajici_tip.get('Body_Ziskane', 0)} b.)"
-                    elif zapas_uzamcen: titulek_radku = f"🔒 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (PROBÍHÁ)"
-                    else: titulek_radku = f"⏳ {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (ČEKÁ NA VÝKOP)"
+                    # HLAVNÍ FIX: Pokud je zápas ukončen turnajově NEBO vyhodnocen u hráče
+                    if je_zapas_ukoncen or is_vyhodnoceno: 
+                        body_zisk = stavajici_tip.get('Body_Ziskane', 0) if stavajici_tip else 0
+                        skore_text = f" ({z.get('Vysledek', '')})" if z.get('Vysledek') else ""
+                        titulek_radku = f"✅ {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']}{skore_text} (+{body_zisk} b.)"
+                    elif zapas_uzamcen: 
+                        titulek_radku = f"🔒 {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (ZAČALO)"
+                    else: 
+                        titulek_radku = f"⏳ {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']} (ČEKÁ NA VÝKOP)"
                         
                     with st.expander(titulek_radku):
                         st.write("")
