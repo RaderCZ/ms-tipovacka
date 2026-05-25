@@ -765,19 +765,15 @@ else:
         goly_celkem = 0
         over_25 = 0
         under_25 = 0
-        btts_celkem = 0 # Počítadlo pro zápasy, kde daly gól oba týmy
+        btts_celkem = 0
 
         for zp in ukoncene_zapasy:
             try:
                 hg, ag = map(int, str(zp.get("Vysledek")).split(":"))
                 total_g = hg + ag
                 goly_celkem += total_g
-                
-                # Over/Under analýza
                 if total_g > 2.5: over_25 += 1
                 else: under_25 += 1
-                
-                # BTTS analýza (oba týmy skórovaly)
                 if hg > 0 and ag > 0: btts_celkem += 1
             except: pass
 
@@ -786,15 +782,48 @@ else:
         p_under = round((under_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
         p_btts = round((btts_celkem / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
 
-        if celkem_odehrano == 0:
-            st.info("ℹ️ Turnajové statistiky budou dostupné, jakmile se vyhodnotí alespoň jeden zápas.")
+        # --- DYNAMICKÉ MATEMATICKÉ MAXIMUM AKTUÁLNÍ FÁZE ---
+        max_bodovych_restu = 0.0
+        for zp in data_zapasy:
+            if str(zp.get("Stav")).lower() == "aktivni":
+                try:
+                    # Najdeme nejvyšší kurz na vítěze z aktuálně stažených dat
+                    kurzy_1x2 = []
+                    if str(zp.get("Kurz_1", "")).strip(): kurzy_1x2.append(float(zp["Kurz_1"]))
+                    if str(zp.get("Kurz_X", "")).strip(): kurzy_1x2.append(float(zp["Kurz_X"]))
+                    if str(zp.get("Kurz_2", "")).strip(): kurzy_1x2.append(float(zp["Kurz_2"]))
+                    max_1x2 = max(kurzy_1x2) if kurzy_1x2 else 0.0
+                    
+                    # Najdeme nejvyšší kurz na góly z aktuálně stažených dat
+                    kurzy_goly = []
+                    if str(zp.get("O25", "")).strip(): kurzy_goly.append(float(zp["O25"]))
+                    if str(zp.get("U25", "")).strip(): kurzy_goly.append(float(zp["U25"]))
+                    max_goly = max(kurzy_goly) if kurzy_goly else 0.0
+                    
+                    max_bodovych_restu += (max_1x2 + max_goly)
+                except: pass
+        
+        max_bodovych_restu = round(max_bodovych_restu, 2)
+
+        # --- VYKRESLENÍ METRIK ---
+        if celkem_odehrano == 0 and max_bodovych_restu == 0:
+            st.info("ℹ️ Turnajové statistiky budou dostupné, jakmile se do systému nahrají zápasy.")
         else:
             c1, c2, c3 = st.columns(3)
             with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano} ⚽")
             with c2: st.metric("Gólový průměr", f"{avg_goly} 🔥")
-            with c3: st.metric("Zápasy, kdy skórovaly oba týmy", f"{p_btts} %")
+            with c3: st.metric("Zápasy, kdy skórovaly oba", f"{p_btts} %")
 
-            # Grafický ukazatel Over/Under (zde ta informace dává smysl)
+            # Elegantní Fortuna infobox pro zbývající body
+            st.markdown(f"""
+                <div style='background-color: #1a1a1a; padding: 14px; border-left: 4px solid #FFF200; border-radius: 4px; margin: 12px 0 22px 0; text-align: center;'>
+                    <span style='color: #aaaaaa; font-size: 13px; text-transform: uppercase; font-weight: 500; letter-spacing: 0.5px;'>🔮 Sázkařská matematika aktuální fáze:</span>
+                    <br>
+                    <span style='color: #FFF200; font-size: 19px; font-weight: bold;'>V neodehraných zápasech této fáze zbývá maximálně: {max_bodovych_restu} bodů</span>
+                </div>
+            """, unsafe_allow_html=True)
+
+            # Grafický ukazatel Over/Under
             st.markdown(f"""
             <div style='width: 100%; background-color: #2d2d2d; border-radius: 4px; display: flex; height: 24px; margin: 15px 0; overflow: hidden;'>
                 <div style='width: {p_over}%; background-color: #FFF200; color: #000; font-weight: bold; text-align: center; font-size: 12px; line-height: 24px;'>OVER 2.5 ({p_over}%)</div>
@@ -807,7 +836,6 @@ else:
         # --- SEKCE B: SÁZKAŘSKÁ DNA (TŘI KARTY VEDLE SEBE) ---
         st.markdown("### 🧬 Sázkařská DNA")
         
-        # Inicializace statistik
         stats_hraci = {}
         for h in UZIVATELE.keys():
             stats_hraci[h] = {
@@ -1090,5 +1118,4 @@ else:
                                 sheet_u.update_cell(i + 2, 3, round(novy_sum, 2))
                                 st.balloons(); st.success(f"🎉 {jm} získal {round(body_pro_hrace[jm], 2)} bodů!")
                     
-                    st.cache_data.clear(); st.success("✅ Všechny dohrané zápasy vyhodnoceny!"); st.rerun()
                     st.cache_data.clear(); st.success("✅ Všechny dohrané zápasy vyhodnoceny!"); st.rerun()
