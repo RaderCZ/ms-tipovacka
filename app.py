@@ -899,7 +899,7 @@ else:
         else:
             st.subheader("⚙️ Ovládací panel administrátora")
             if st.button("🔄 Stáhnout čerstvé zápasy a kurzy", type="secondary"):
-                SPORT = "soccer_usa_mls" 
+                SPORT = "soccer_fifa_world_cup" 
                 url = f"https://api.the-odds-api.com/v4/sports/{SPORT}/odds/?apiKey={API_KEY_ODDS}&regions=eu&markets=h2h,totals"
                 with st.spinner("Aktualizuji kurzovou nabídku..."):
                     odpoved = requests.get(url)
@@ -983,7 +983,7 @@ else:
             st.markdown("---")
 
             if st.button("🏆 Vyhodnotit výsledky zápasů a rozdat body", type="secondary"):
-                SPORT = "soccer_usa_mls"
+                SPORT = "soccer_fifa_world_cup"
                 url_scores = f"https://api.the-odds-api.com/v4/sports/{SPORT}/scores/?apiKey={API_KEY_ODDS}&daysFrom=3"
                 
                 with st.spinner("Zjišťuji výsledky z API..."):
@@ -1089,4 +1089,5 @@ else:
                                 sheet_u.update_cell(i + 2, 3, round(novy_sum, 2))
                                 st.balloons(); st.success(f"🎉 {jm} získal {round(body_pro_hrace[jm], 2)} bodů!")
                     
+                    st.cache_data.clear(); st.success("✅ Všechny dohrané zápasy vyhodnoceny!"); st.rerun()
                     st.cache_data.clear(); st.success("✅ Všechny dohrané zápasy vyhodnoceny!"); st.rerun()
