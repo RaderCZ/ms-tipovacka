@@ -751,13 +751,6 @@ else:
                                     st.write(f"👤 **{t['Uzivatel']}**: {tip_1x2_text} ({t['Kurz_1X2']}) | {tip_goly_text} ({t['Kurz_Goly']})")
                             else: st.caption("Nikdo jiný z hráčů na tento zápas nenasadil žádný tip.")                    
 
-    Rozkaz! Tady je kompletně sestavená, učesaná a neprůstřelná Záložka 3 (Statistiky). Obsahuje jak turnajový radar a sázkařskou DNA, tak obě horké novinky: Skokana dne (podle datumu) i Kolektivní rozum (shodu celé vaší trojice).
-
-V kódu jsem zachoval všechny tvoje designové prvky, ošetřil vstupy proti chybám (např. ořezávání času z datumu kvůli správnému párování dní) a boxíky zarovnal tak, aby v tmavém Fortuna režimu vypadaly naprosto luxusně.
-
-Otevři app.py, najdi řádek # ========================================== / ZÁLOŽKA 3: 📊 STATISTIKY (PRO TÁTU) a celý vnitřek této záložky (až po začátek Záložky 4: Admin) nahraď tímto kompletním blokem:
-
-Python
     # ==========================================
     # ZÁLOŽKA 3: 📊 STATISTIKY (PRO TÁTU)
     # ==========================================
