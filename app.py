@@ -751,6 +751,13 @@ else:
                                     st.write(f"👤 **{t['Uzivatel']}**: {tip_1x2_text} ({t['Kurz_1X2']}) | {tip_goly_text} ({t['Kurz_Goly']})")
                             else: st.caption("Nikdo jiný z hráčů na tento zápas nenasadil žádný tip.")                    
 
+    Rozkaz! Tady je kompletně sestavená, učesaná a neprůstřelná Záložka 3 (Statistiky). Obsahuje jak turnajový radar a sázkařskou DNA, tak obě horké novinky: Skokana dne (podle datumu) i Kolektivní rozum (shodu celé vaší trojice).
+
+V kódu jsem zachoval všechny tvoje designové prvky, ošetřil vstupy proti chybám (např. ořezávání času z datumu kvůli správnému párování dní) a boxíky zarovnal tak, aby v tmavém Fortuna režimu vypadaly naprosto luxusně.
+
+Otevři app.py, najdi řádek # ========================================== / ZÁLOŽKA 3: 📊 STATISTIKY (PRO TÁTU) a celý vnitřek této záložky (až po začátek Záložky 4: Admin) nahraď tímto kompletním blokem:
+
+Python
     # ==========================================
     # ZÁLOŽKA 3: 📊 STATISTIKY (PRO TÁTU)
     # ==========================================
@@ -787,14 +794,12 @@ else:
         for zp in data_zapasy:
             if str(zp.get("Stav")).lower() == "aktivni":
                 try:
-                    # Najdeme nejvyšší kurz na vítěze z aktuálně stažených dat
                     kurzy_1x2 = []
                     if str(zp.get("Kurz_1", "")).strip(): kurzy_1x2.append(float(zp["Kurz_1"]))
                     if str(zp.get("Kurz_X", "")).strip(): kurzy_1x2.append(float(zp["Kurz_X"]))
                     if str(zp.get("Kurz_2", "")).strip(): kurzy_1x2.append(float(zp["Kurz_2"]))
                     max_1x2 = max(kurzy_1x2) if kurzy_1x2 else 0.0
                     
-                    # Najdeme nejvyšší kurz na góly z aktuálně stažených dat
                     kurzy_goly = []
                     if str(zp.get("O25", "")).strip(): kurzy_goly.append(float(zp["O25"]))
                     if str(zp.get("U25", "")).strip(): kurzy_goly.append(float(zp["U25"]))
@@ -805,7 +810,73 @@ else:
         
         max_bodovych_restu = round(max_bodovych_restu, 2)
 
-        # --- VYKRESLENÍ METRIK ---
+        # --- 🚀 SKOKAN DNE (SUMA BODŮ ZA POSLEDNÍ KOMPLETNĚ ODEHRANÝ DEN) ---
+        skokan_jmeno = None
+        skokan_zisk = -999.0
+        posledni_den_text = ""
+        
+        if celkem_odehrano >= 1:
+            try:
+                dny_odehrano = []
+                for zp in ukoncene_zapasy:
+                    if zp.get("Datum"):
+                        jen_den = str(zp["Datum"]).split()[0] # Odsekne čas, nechá jen např. "25.05."
+                        dny_odehrano.append(jen_den)
+                
+                if dny_odehrano:
+                    unikatni_dny = list(set(dny_odehrano))
+                    unikatni_dny.sort(key=lambda x: datetime.strptime(f"{x}2026", "%d.%m.%Y"))
+                    posledni_den_text = unikatni_dny[-1] # Nejnovější kalendářní den, co má hotový zápas
+                    
+                if posledni_den_text:
+                    vsichni_hraci_list = list(UZIVATELE.keys())
+                    for hr in vsichni_hraci_list:
+                        body_za_den = 0.0
+                        
+                        for s in vsechny_sazky:
+                            if str(s.get("Uzivatel")) == hr and str(s.get("Stav_Tipu", "")).lower() == "vyhodnoceno":
+                                z_id = str(s.get("ID_zapasu"))
+                                info_z_sazky = next((zp for zp in data_zapasy if str(zp.get("ID")) == z_id), None)
+                                
+                                if info_z_sazky and info_z_sazky.get("Datum", "").startswith(posledni_den_text):
+                                    body_za_den += float(s.get("Body_Ziskane", 0))
+                        
+                        if body_za_den > skokan_zisk:
+                            skokan_zisk = body_za_den
+                            skokan_jmeno = hr
+            except:
+                pass
+
+        # --- 📊 KOLEKTIVNÍ ROZUM (SHODA VŠECH TŘÍ HRÁČŮ V TABULCE) ---
+        shodne_tipy_celkem = 0
+        shodne_tipy_vyhry = 0
+        vsichni_hraci_list = list(UZIVATELE.keys())
+
+        # Najdeme zápasy, které už jsou vyhodnocené
+        vyhodnocene_zapasy_ids = set(str(s.get("ID_zapasu")) for s in vsechny_sazky if str(s.get("Stav_Tipu", "")).lower() == "vyhodnoceno")
+
+        for z_id in vyhodnocene_zapasy_ids:
+            sazky_kolektivu = [s for s in vsechny_sazky if str(s.get("ID_zapasu")) == z_id and str(s.get("Stav_Tipu", "")).lower() == "vyhodnoceno"]
+            
+            # Shodu počítáme jen tehdy, pokud k tomuto zápasu poslali sázku všichni aktivní hráči
+            if len(sazky_kolektivu) == len(vsichni_hraci_list):
+                # 1. Kontrola shody na 1X2
+                tipy_1x2 = [s.get("Tip_1X2") for s in sazky_kolektivu]
+                if len(set(tipy_1x2)) == 1 and tipy_1x2[0] != "Nenasazeno":
+                    shodne_tipy_celkem += 1
+                    if str(sazky_kolektivu[0].get("Stav_1X2")).lower() == "vyhra":
+                        shodne_tipy_vyhry += 1
+                
+                # 2. Kontrola shody na Góly
+                tipy_goly = [s.get("Tip_Goly") for s in sazky_kolektivu]
+                if len(set(tipy_goly)) == 1 and tipy_goly[0] != "Nenasazeno":
+                    shodne_tipy_celkem += 1
+                    if str(sazky_kolektivu[0].get("Stav_Goly")).lower() == "vyhra":
+                        shodne_tipy_vyhry += 1
+
+        kolektivni_uspech_pct = round((shodne_tipy_vyhry / shodne_tipy_celkem) * 100, 1) if shodne_tipy_celkem > 0 else 0.0
+
+        # --- VYKRESLENÍ METRIK DO APLIKACE ---
         if celkem_odehrano == 0 and max_bodovych_restu == 0:
             st.info("ℹ️ Turnajové statistiky budou dostupné, jakmile se do systému nahrají zápasy.")
         else:
@@ -814,12 +885,50 @@ else:
             with c2: st.metric("Gólový průměr", f"{avg_goly} 🔥")
             with c3: st.metric("Zápasy, kdy skórovaly oba", f"{p_btts} %")
 
-            # Elegantní Fortuna infobox pro zbývající body
+            # --- VIZUÁLNÍ KARTY: SKOKAN DNE + KOLEKTIVNÍ ROZUM ---
+            col_box1, col_box2 = st.columns(2)
+            
+            with col_box1:
+                if skokan_jmeno and skokan_zisk > 0:
+                    st.markdown(f"""
+                        <div style='background-color: #1a1a1a; padding: 12px; border-top: 3px solid #5cd6ff; border-radius: 4px; text-align: center; min-height: 90px;'>
+                            <span style='color: #aaa; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;'>🚀 Skokan posledního dne ({posledni_den_text}):</span>
+                            <br><span style='color: #fff; font-size: 18px; font-weight: bold;'>{skokan_jmeno}</span>
+                            <br><span style='color: #5cd6ff; font-size: 13px; font-weight: 500;'>Za tento den urval: +{round(skokan_zisk, 2)} b.</span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown("""
+                        <div style='background-color: #1a1a1a; padding: 12px; border-top: 3px solid #5cd6ff; border-radius: 4px; text-align: center; min-height: 90px;'>
+                            <span style='color: #aaa; font-size: 11px; text-transform: uppercase; font-weight: 700;'>🚀 Skokan posledního dne:</span>
+                            <br><span style='color: #888; font-size: 14px; font-style: italic; margin-top: 10px; display:inline-block;'>Čeká se na uzavření dne...</span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                    
+            with col_box2:
+                if shodne_tipy_celkem > 0:
+                    barva_rozumu = "#a2ffaf" if kolektivni_uspech_pct >= 50 else "#ff4b4b"
+                    st.markdown(f"""
+                        <div style='background-color: #1a1a1a; padding: 12px; border-top: 3px solid #ffb77c; border-radius: 4px; text-align: center; min-height: 90px;'>
+                            <span style='color: #aaa; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;'>📊 Kolektivní rozum:</span>
+                            <br><span style='color: {barva_rozumu}; font-size: 20px; font-weight: bold;'>{kolektivni_uspech_pct} %</span>
+                            <br><span style='color: #aaa; font-size: 11px;'>Úspěšnost při shodě ({shodne_tipy_vyhry} z {shodne_tipy_celkem})</span>
+                        </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown("""
+                        <div style='background-color: #1a1a1a; padding: 12px; border-top: 3px solid #ffb77c; border-radius: 4px; text-align: center; min-height: 90px;'>
+                            <span style='color: #aaa; font-size: 11px; text-transform: uppercase; font-weight: 700;'>📊 Kolektivní rozum:</span>
+                            <br><span style='color: #888; font-size: 13px; font-style: italic; margin-top: 10px; display:inline-block;'>Zatím nebyla stoprocentní shoda...</span>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+            # Žlutý infobox pro zbývající body ve fázi
             st.markdown(f"""
-                <div style='background-color: #1a1a1a; padding: 14px; border-left: 4px solid #FFF200; border-radius: 4px; margin: 12px 0 22px 0; text-align: center;'>
-                    <span style='color: #aaaaaa; font-size: 13px; text-transform: uppercase; font-weight: 500; letter-spacing: 0.5px;'>🔮 Sázkařská matematika aktuální fáze:</span>
+                <div style='background-color: #1a1a1a; padding: 12px; border-left: 4px solid #FFF200; border-radius: 4px; margin: 15px 0 22px 0; text-align: center;'>
+                    <span style='color: #aaaaaa; font-size: 12px; text-transform: uppercase; font-weight: 500; letter-spacing: 0.5px;'>🔮 Sázkařská matematika aktuální fáze:</span>
                     <br>
-                    <span style='color: #FFF200; font-size: 19px; font-weight: bold;'>V neodehraných zápasech této fáze zbývá maximálně: {max_bodovych_restu} bodů</span>
+                    <span style='color: #FFF200; font-size: 18px; font-weight: bold;'>V neodehraných zápasech této fáze zbývá maximálně: {max_bodovych_restu} bodů</span>
                 </div>
             """, unsafe_allow_html=True)
 
