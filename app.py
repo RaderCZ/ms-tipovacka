@@ -946,11 +946,12 @@ else:
 
                         if klic_zapasu in mapa_zapasu:
                             if str(mapa_zapasu[klic_zapasu].get("Stav")).lower() == "aktivni":
-                                mapa_zapasu[klic_zapasu]["Kurz_1"] = k_1
-                                mapa_zapasu[klic_zapasu]["Kurz_X"] = k_x
-                                mapa_zapasu[klic_zapasu]["Kurz_2"] = k_2
-                                mapa_zapasu[klic_zapasu]["O25"] = o25
-                                mapa_zapasu[klic_zapasu]["U25"] = u25
+                                # Přepíšeme kurz pouze v případě, že ho API reálně vrátilo (není prázdný)
+                                if str(k_1) != "": mapa_zapasu[klic_zapasu]["Kurz_1"] = k_1
+                                if str(k_x) != "": mapa_zapasu[klic_zapasu]["Kurz_X"] = k_x
+                                if str(k_2) != "": mapa_zapasu[klic_zapasu]["Kurz_2"] = k_2
+                                if str(o25) != "": mapa_zapasu[klic_zapasu]["O25"] = o25
+                                if str(u25) != "": mapa_zapasu[klic_zapasu]["U25"] = u25
                                 if datum_formatovane: mapa_zapasu[klic_zapasu]["Datum"] = datum_formatovane
                         else:
                             max_id += 1
