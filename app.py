@@ -218,7 +218,7 @@ else:
 
 client = gspread.authorize(creds)
 
-# --- 🧠 PAMĚŤOVÉ FUNKCE (OCHRANA PŘED ERROR 429) ---
+# --- 🧠 PAMĚŤOVÉ FUNKCE (OCHRANA PREED ERROR 429) ---
 @st.cache_data(ttl=30)
 def nacti_uzivatele():
     try: return client.open("Mistrovstvi_Tipovacka").worksheet("Uzivatele").get_all_records()
@@ -235,85 +235,44 @@ def nacti_sazky():
     except: return []
 
 
-# --- 🔥 GLOBÁLNÍ BEZPEČNÉ NAČTENÍ DAT (ZAMEZÍ JAKÝMKOLIV NAMEERROR V CELÉM KÓDU) ---
-data_uzivatele = nacti_uzivatele()
-data_zapasy = nacti_zapasy()
-vsechny_sazky = nacti_sazky()
+# --- 🔥 ABSOLUTNÍ NEPRŮSTŘELNÁ INICIALIZACE PROMĚNNÝCH PROTI NAMEERROR 🔥 ---
+data_uzivatele = []
+data_zapasy = []
+vsechny_sazky = []
+
+# Pokusíme se bezpečně naplnit data hned na startu
+try: data_uzivatele = nacti_uzivatele()
+except: pass
+
+try: data_zapasy = nacti_zapasy()
+except: pass
+
+try: vsechny_sazky = nacti_sazky()
+except: pass
 
 # Sestavení slovníku uživatelů pro celou aplikaci
 UZIVATELE = {}
-for radek in data_uzivatele:
-    jmeno = str(radek.get("Jméno", ""))
-    if jmeno:
-        UZIVATELE[jmeno] = {
-            "heslo": str(radek.get("Heslo", "")),
-            "body": radek.get("Body", 0),
-            "status": str(radek.get("Status", "")).strip()
-        }
+if data_uzivatele:
+    for radek in data_uzivatele:
+        jmeno = str(radek.get("Jméno", ""))
+        if jmeno:
+            UZIVATELE[jmeno] = {
+                "heslo": str(radek.get("Heslo", "")),
+                "body": radek.get("Body", 0),
+                "status": str(radek.get("Status", "")).strip()
+            }
 
 # --- INICIALIZACE STAVU PŘIHLÁŠENÍ ---
 if "prihlasen" not in st.session_state:
     st.session_state["prihlasen"] = False
     st.session_state["uzivatel"] = ""
 
-# --- STRUKTURA TÝMŮ ---
-PREKLAD_TYMU = {
-    "Canada": {"jmeno": "Kanada", "kod": "ca"}, "Mexico": {"jmeno": "Mexiko", "kod": "mx"}, "USA": {"jmeno": "USA", "kod": "us"},
-    "England": {"jmeno": "Anglie", "kod": "gb-eng"}, "Austria": {"jmeno": "Rakousko", "kod": "at"}, "Belgium": {"jmeno": "Belgie", "kod": "be"},
-    "Bosnia & Herzegovina": {"jmeno": "Bosna a Herc.", "kod": "ba"}, "Croatia": {"jmeno": "Chorvatsko", "kod": "hr"}, "Czech Republic": {"jmeno": "Česko", "kod": "cz"},
-    "France": {"jmeno": "Francie", "kod": "fr"}, "Germany": {"jmeno": "Německo", "kod": "de"}, "Netherlands": {"jmeno": "Nizozemsko", "kod": "nl"},
-    "Norway": {"jmeno": "Norsko", "kod": "no"}, "Portugal": {"jmeno": "Portugalsko", "kod": "pt"}, "Scotland": {"jmeno": "Skotsko", "kod": "gb-sct"},
-    "Spain": {"jmeno": "Španělsko", "kod": "es"}, "Sweden": {"jmeno": "Švédsko", "kod": "se"}, "Switzerland": {"jmeno": "Švýcarsko", "kod": "ch"}, "Turkey": {"jmeno": "Turecko", "kod": "tr"},
-    "Argentina": {"jmeno": "Argentina", "kod": "ar"}, "Brazil": {"jmeno": "Brazílie", "kod": "br"}, "Ecuador": {"jmeno": "Ekvádor", "kod": "ec"},
-    "Colombia": {"jmeno": "Kolumbie", "kod": "co"}, "Paraguay": {"jmeno": "Paraguay", "kod": "py"}, "Uruguay": {"jmeno": "Uruguay", "kod": "uy"},
-    "Algeria": {"jmeno": "Alžírsko", "kod": "dz"}, "Egypt": {"jmeno": "Egypt", "kod": "eg"}, "Ghana": {"jmeno": "Ghana", "kod": "gh"},
-    "DR Congo": {"jmeno": "DR Kongo", "kod": "cd"}, "Cape Verde": {"jmeno": "Kapverdy", "kod": "cv"}, "Morocco": {"jmeno": "Maroko", "kod": "ma"},
-    "Ivory Coast": {"jmeno": "Pobřeží slonoviny", "kod": "ci"}, "Senegal": {"jmeno": "Senegal", "kod": "sn"}, "Tunisia": {"jmeno": "Tunisko", "kod": "tn"}, "South Africa": {"jmeno": "Jihoafrická rep.", "kod": "za"},
-    "Australia": {"jmeno": "Austrálie", "kod": "au"}, "Iran": {"jmeno": "Írán", "kod": "ir"}, "Iraq": {"jmeno": "Irák", "kod": "iq"},
-    "Japan": {"jmeno": "Japonsko", "kod": "jp"}, "Jordan": {"jmeno": "Jordánsko", "kod": "jo"}, "Qatar": {"jmeno": "Katar", "kod": "qa"},
-    "Saudi Arabia": {"jmeno": "Saúdská Arábie", "kod": "sa"}, "South Korea": {"jmeno": "Jižní Korea", "kod": "kr"}, "Uzbekistan": {"jmeno": "Uzbekistán", "kod": "uz"},
-    "Curaçao": {"jmeno": "Curaçao", "kod": "cw"}, "Haiti": {"jmeno": "Haiti", "kod": "ht"}, "Panama": {"jmeno": "Panama", "kod": "pa"}, "New Zealand": {"jmeno": "Nový Zéland", "kod": "nz"},
-    
-    # --- MLS TÝMY PRO TESTOVÁNÍ ---
-    "Atlanta United FC": {"jmeno": "Atlanta Utd", "kod": "us"},
-    "Austin FC": {"jmeno": "Austin FC", "kod": "us"},
-    "Charlotte FC": {"jmeno": "Charlotte FC", "kod": "us"},
-    "Chicago Fire": {"jmeno": "Chicago Fire", "kod": "us"},
-    "Chicago Fire FC": {"jmeno": "Chicago Fire", "kod": "us"},
-    "FC Cincinnati": {"jmeno": "FC Cincinnati", "kod": "us"},
-    "Colorado Rapids": {"jmeno": "Colorado Rapids", "kod": "us"},
-    "Columbus Crew SC": {"jmeno": "Columbus Crew SC", "kod": "us"},
-    "FC Dallas": {"jmeno": "FC Dallas", "kod": "us"},
-    "D.C. United": {"jmeno": "D.C. United", "kod": "us"},
-    "Houston Dynamo": {"jmeno": "Houston Dynamo", "kod": "us"},
-    "Sporting Kansas City": {"jmeno": "Sporting KC", "kod": "us"},
-    "LA Galaxy": {"jmeno": "LA Galaxy", "kod": "us"},
-    "Los Angeles FC": {"jmeno": "Los Angeles FC", "kod": "us"},
-    "Inter Miami CF": {"jmeno": "Inter Miami", "kod": "us"},
-    "Minnesota United FC": {"jmeno": "Minnesota Utd", "kod": "us"},
-    "CF Montreal": {"jmeno": "CF Montreal", "kod": "ca"},
-    "Nashville SC": {"jmeno": "Nashville SC", "kod": "us"},
-    "New England Revolution": {"jmeno": "NE Revolution", "kod": "us"},
-    "New York City FC": {"jmeno": "New York City", "kod": "us"},
-    "New York Red Bulls": {"jmeno": "NY Red Bulls", "kod": "us"},
-    "Orlando City SC": {"jmeno": "Orlando City", "kod": "us"},
-    "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
-    "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
-    "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
-    "San Diego FC": {"jmeno": "San Diego", "kod": "us"},
-    "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
-    "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
-    "St. Louis City SC": {"jmeno": "St. Louis City", "kod": "us"},
-    "Toronto FC": {"jmeno": "Toronto FC", "kod": "ca"},
-    "Vancouver Whitecaps FC": {"jmeno": "Vancouver", "kod": "ca"}   
-}
-
-def dej_data_tymu(tym_z_api):
-    return PREKLAD_TYMU.get(tym_z_api, {"jmeno": tym_z_api, "kod": "un"})
+# --- HLAVNÍ TITULEK ---
+st.title("⚽ MS 26 TIPOVAČKA")
 
 
 # ==========================================
-# OBRAZOVKA 1: PŘIHLÁŠENÍ
+# OBRAZOVKA A: PŘIHLÁŠENÍ
 # ==========================================
 if not st.session_state["prihlasen"]:
     st.subheader("Přihlášení do systému")
@@ -321,21 +280,75 @@ if not st.session_state["prihlasen"]:
     heslo = st.text_input("Heslo", type="password")
     
     if st.button("Přihlásit se", type="secondary"):
-        if jmeno in UZIVATELE and UZIVATELE[jmeno]["heslo"] == heslo:
+        if UZIVATELE and jmeno in UZIVATELE and UZIVATELE[jmeno]["heslo"] == heslo:
             st.session_state["prihlasen"] = True
             st.session_state["uzivatel"] = jmeno
             st.success(f"Vítej, {jmeno}!")
             st.rerun()
         else:
-            st.error("Nesprávné jméno nebo heslo!")
+            st.error("Nesprávné jméno nebo heslo (nebo se nepodařilo načíst databázi z Google Sheets)!")
 
 
 # ==========================================
-# OBRAZOVKA 2: VNITŘEK APLIKACE (PO PŘIHLÁŠENÍ)
+# OBRAZOVKA B: VNITŘEK APLIKACE (PO PŘIHLÁŠENÍ)
 # ==========================================
 else:
+    PREKLAD_TYMU = {
+        "Canada": {"jmeno": "Kanada", "kod": "ca"}, "Mexico": {"jmeno": "Mexiko", "kod": "mx"}, "USA": {"jmeno": "USA", "kod": "us"},
+        "England": {"jmeno": "Anglie", "kod": "gb-eng"}, "Austria": {"jmeno": "Rakousko", "kod": "at"}, "Belgium": {"jmeno": "Belgie", "kod": "be"},
+        "Bosnia & Herzegovina": {"jmeno": "Bosna a Herc.", "kod": "ba"}, "Croatia": {"jmeno": "Chorvatsko", "kod": "hr"}, "Czech Republic": {"jmeno": "Česko", "kod": "cz"},
+        "France": {"jmeno": "Francie", "kod": "fr"}, "Germany": {"jmeno": "Německo", "kod": "de"}, "Netherlands": {"jmeno": "Nizozemsko", "kod": "nl"},
+        "Norway": {"jmeno": "Norsko", "kod": "no"}, "Portugal": {"jmeno": "Portugalsko", "kod": "pt"}, "Scotland": {"jmeno": "Skotsko", "kod": "gb-sct"},
+        "Spain": {"jmeno": "Španělsko", "kod": "es"}, "Sweden": {"jmeno": "Švédsko", "kod": "se"}, "Switzerland": {"jmeno": "Švýcarsko", "kod": "ch"}, "Turkey": {"jmeno": "Turecko", "kod": "tr"},
+        "Argentina": {"jmeno": "Argentina", "kod": "ar"}, "Brazil": {"jmeno": "Brazílie", "kod": "br"}, "Ecuador": {"jmeno": "Ekvádor", "kod": "ec"},
+        "Colombia": {"jmeno": "Kolumbie", "kod": "co"}, "Paraguay": {"jmeno": "Paraguay", "kod": "py"}, "Uruguay": {"jmeno": "Uruguay", "kod": "uy"},
+        "Algeria": {"jmeno": "Alžírsko", "kod": "dz"}, "Egypt": {"jmeno": "Egypt", "kod": "eg"}, "Ghana": {"jmeno": "Ghana", "kod": "gh"},
+        "DR Congo": {"jmeno": "DR Kongo", "kod": "cd"}, "Cape Verde": {"jmeno": "Kapverdy", "kod": "cv"}, "Morocco": {"jmeno": "Maroko", "kod": "ma"},
+        "Ivory Coast": {"jmeno": "Pobřeží slonoviny", "kod": "ci"}, "Senegal": {"jmeno": "Senegal", "kod": "sn"}, "Tunisia": {"jmeno": "Tunisko", "kod": "tn"}, "South Africa": {"jmeno": "Jihoafrická rep.", "kod": "za"},
+        "Australia": {"jmeno": "Austrálie", "kod": "au"}, "Iran": {"jmeno": "Írán", "kod": "ir"}, "Iraq": {"jmeno": "Irák", "kod": "iq"},
+        "Japan": {"jmeno": "Japonsko", "kod": "jp"}, "Jordan": {"jmeno": "Jordánsko", "kod": "jo"}, "Qatar": {"jmeno": "Katar", "kod": "qa"},
+        "Saudi Arabia": {"jmeno": "Saúdská Arábie", "kod": "sa"}, "South Korea": {"jmeno": "Jižní Korea", "kod": "kr"}, "Uzbekistan": {"jmeno": "Uzbekistán", "kod": "uz"},
+        "Curaçao": {"jmeno": "Curaçao", "kod": "cw"}, "Haiti": {"jmeno": "Haiti", "kod": "ht"}, "Panama": {"jmeno": "Panama", "kod": "pa"}, "New Zealand": {"jmeno": "Nový Zéland", "kod": "nz"},
+        
+        # --- MLS TÝMY PRO TESTOVÁNÍ ---
+        "Atlanta United FC": {"jmeno": "Atlanta Utd", "kod": "us"},
+        "Austin FC": {"jmeno": "Austin FC", "kod": "us"},
+        "Charlotte FC": {"jmeno": "Charlotte FC", "kod": "us"},
+        "Chicago Fire": {"jmeno": "Chicago Fire", "kod": "us"},
+        "Chicago Fire FC": {"jmeno": "Chicago Fire", "kod": "us"},
+        "FC Cincinnati": {"jmeno": "FC Cincinnati", "kod": "us"},
+        "Colorado Rapids": {"jmeno": "Colorado Rapids", "kod": "us"},
+        "Columbus Crew SC": {"jmeno": "Columbus Crew SC", "kod": "us"},
+        "FC Dallas": {"jmeno": "FC Dallas", "kod": "us"},
+        "D.C. United": {"jmeno": "D.C. United", "kod": "us"},
+        "Houston Dynamo": {"jmeno": "Houston Dynamo", "kod": "us"},
+        "Sporting Kansas City": {"jmeno": "Sporting KC", "kod": "us"},
+        "LA Galaxy": {"jmeno": "LA Galaxy", "kod": "us"},
+        "Los Angeles FC": {"jmeno": "Los Angeles FC", "kod": "us"},
+        "Inter Miami CF": {"jmeno": "Inter Miami", "kod": "us"},
+        "Minnesota United FC": {"jmeno": "Minnesota Utd", "kod": "us"},
+        "CF Montreal": {"jmeno": "CF Montreal", "kod": "ca"},
+        "Nashville SC": {"jmeno": "Nashville SC", "kod": "us"},
+        "New England Revolution": {"jmeno": "NE Revolution", "kod": "us"},
+        "New York City FC": {"jmeno": "New York City", "kod": "us"},
+        "New York Red Bulls": {"jmeno": "NY Red Bulls", "kod": "us"},
+        "Orlando City SC": {"jmeno": "Orlando City", "kod": "us"},
+        "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
+        "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
+        "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
+        "San Diego FC": {"jmeno": "San Diego", "kod": "us"},
+        "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
+        "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
+        "St. Louis City SC": {"jmeno": "St. Louis City", "kod": "us"},
+        "Toronto FC": {"jmeno": "Toronto FC", "kod": "ca"},
+        "Vancouver Whitecaps FC": {"jmeno": "Vancouver", "kod": "ca"}   
+    }
+    
+    def dej_data_tymu(tym_z_api):
+        return PREKLAD_TYMU.get(tym_z_api, {"jmeno": tym_z_api, "kod": "un"})
+        
     aktualni_uzivatel = st.session_state["uzivatel"]
-    aktualni_body = UZIVATELE[aktualni_uzivatel]["body"]
+    aktualni_body = UZIVATELE[aktualni_uzivatel]["body"] if aktualni_uzivatel in UZIVATELE else 0.0
     
     # --- SIDEBAR VÝPISY ---
     st.sidebar.write(f"👤 Hráč: **{aktualni_uzivatel}**")
@@ -356,9 +369,9 @@ else:
         st.session_state["uzivatel"] = ""
         st.rerun()
         
-    # --- BANTER BOX: NASTAVENÍ STATUSU ---
+    # --- BANTER BOX ---
     st.sidebar.write("")
-    stuj_status = UZIVATELE[aktualni_uzivatel].get("status", "")
+    stuj_status = UZIVATELE[aktualni_uzivatel].get("status", "") if aktualni_uzivatel in UZIVATELE else ""
     novy_status = st.sidebar.text_input("💬 Rýpni si do ostatních:", value=stuj_status, max_chars=60, key="banter_input")
     
     if novy_status != stuj_status:
@@ -756,15 +769,12 @@ else:
     with tab3:
         st.subheader("🏟️ Statistiky turnaje")
 
-        ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
-        celkem_odehrano_local = len(ukoncene_zapasy_local)
-
         goly_celkem = 0
         over_25 = 0
         under_25 = 0
         btts_celkem = 0
 
-        for zp in ukoncene_zapasy_local:
+        for zp in ukoncene_zapasy:
             try:
                 hg, ag = map(int, str(zp.get("Vysledek")).split(":"))
                 total_g = hg + ag
@@ -774,10 +784,10 @@ else:
                 if hg > 0 and ag > 0: btts_celkem += 1
             except: pass
 
-        avg_goly = round(goly_celkem / celkem_odehrano_local, 2) if celkem_odehrano_local > 0 else 0.0
-        p_over = round((over_25 / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
-        p_under = round((under_25 / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
-        p_btts = round((btts_celkem / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
+        avg_goly = round(goly_celkem / celkem_odehrano, 2) if celkem_odehrano > 0 else 0.0
+        p_over = round((over_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
+        p_under = round((under_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
+        p_btts = round((btts_celkem / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
 
         max_bodovych_restu = 0.0
         for zp in data_zapasy:
@@ -803,10 +813,10 @@ else:
         skokan_zisk = -999.0
         posledni_den_text = ""
         
-        if celkem_odehrano_local >= 1:
+        if celkem_odehrano >= 1:
             try:
                 dny_odehrano = []
-                for zp in ukoncene_zapasy_local:
+                for zp in ukoncene_zapasy:
                     if zp.get("Datum"):
                         jen_den = str(zp["Datum"]).split()[0]
                         dny_odehrano.append(jen_den)
@@ -852,11 +862,11 @@ else:
 
         kolektivni_uspech_pct = round((shodne_tipy_vyhry / shodne_tipy_celkem) * 100, 1) if shodne_tipy_celkem > 0 else 0.0
 
-        if celkem_odehrano_local == 0 and max_bodovych_restu == 0:
+        if celkem_odehrano == 0 and max_bodovych_restu == 0:
             st.info("ℹ️ Turnajové statistiky budou dostupné, jakmile se do systému nahrají zápasy.")
         else:
             c1, c2, c3 = st.columns(3)
-            with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano_local} ⚽")
+            with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano} ⚽")
             with c2: st.metric("Gólový průměr", f"{avg_goly} 🔥")
             with c3: st.metric("Zápasy, kdy skórovaly oba", f"{p_btts} %")
 
@@ -1078,6 +1088,7 @@ else:
                             k.get("Vysledek",""), k.get("Stav","aktivni")
                         ])
 
+                    sheet_z = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
                     sheet_z.clear()
                     sheet_z.append_rows([hlavicka_zapasy] + finalni_radky)
                     st.cache_data.clear(); st.success("✅ Kurzová nabídka byla bezpečně aktualizována!"); st.rerun()
