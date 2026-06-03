@@ -210,12 +210,10 @@ st.markdown("""
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 if "gspread_creds" in st.secrets:
-    # Online verze na serveru (vezme si klíč z tajného nastavení Streamlitu)
     import json
     creds_dict = dict(st.secrets["gspread_creds"])
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
 else:
-    # Lokální verze u tebe v PC
     creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
 
 client = gspread.authorize(creds)
@@ -233,14 +231,17 @@ def nacti_zapasy():
 def nacti_sazky():
     return client.open("Mistrovstvi_Tipovacka").worksheet("Sázky").get_all_records()
 
-# --- NAČTENÍ DATA PŘES PAMĚŤ ---
+# --- GLOBÁLNÍ NAČTENÍ DAT NA STARTU (ZAMEZÍ JAKÝMKOLIV NAMEERROR V CELÉM KÓDU) ---
 data_uzivatele = nacti_uzivatele()
+data_zapasy = nacti_zapasy()
+vsechny_sazky = nacti_sazky()
+
 UZIVATELE = {}
 for radek in data_uzivatele:
     jmeno = str(radek["Jméno"])
     heslo = str(radek["Heslo"])
     body = radek["Body"]
-    status = str(radek.get("Status", "")).strip() # Načte status, pokud existuje
+    status = str(radek.get("Status", "")).strip()
     UZIVATELE[jmeno] = {"heslo": heslo, "body": body, "status": status}
 
 # --- HLAVNÍ TITULEK ---
@@ -313,7 +314,7 @@ else:
         "Orlando City SC": {"jmeno": "Orlando City", "kod": "us"},
         "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
         "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
-        "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
+        "Real Salt Lake": {"jborne": "Real Salt Lake", "kod": "us"},
         "San Diego FC": {"jmeno": "San Diego", "kod": "us"},
         "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
         "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
@@ -332,12 +333,11 @@ else:
     st.sidebar.write(f"👤 Hráč: **{aktualni_uzivatel}**")
     st.sidebar.write(f"✨ Body: **{aktualni_body} b.**")
     
-    vsechny_sazky = nacti_sazky()
     moje_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel", "")) == aktualni_uzivatel]
     
-    # Spočítáme, kolik žolíků už uživatel celkem použil (s bezpečným ošetřením .get)
+    # Spočítáme, kolik žolíků už uživatel celkem použil
     pouziti_zolici = sum(1 for s in moje_sazky if str(s.get("Zolik", "Ne")).lower() == "ano")
-    max_zoliku = 3  # Limit na základní skupiny
+    max_zoliku = 3  
     zbyva_zoliku = max(0, max_zoliku - pouziti_zolici)
     
     # Vytvoření ikon žolíků (např. 🃏 🃏 ❌)
@@ -356,12 +356,11 @@ else:
     
     if novy_status != stuj_status:
         if st.sidebar.button("💾 Uložit status", type="secondary", key="btn_uložit_status"):
-            with st.spinner("Uklám status..."):
+            with st.spinner("Ukládám status..."):
                 sheet_u = client.open("Mistrovstvi_Tipovacka").worksheet("Uzivatele")
                 u_list = sheet_u.get_all_records()
                 for i, r in enumerate(u_list):
                     if str(r["Jméno"]) == aktualni_uzivatel:
-                        # Sloupec D je 4. sloupec v tabulce
                         sheet_u.update_cell(i + 2, 4, novy_status)
                         break
             st.cache_data.clear()
@@ -370,7 +369,6 @@ else:
     st.sidebar.markdown("---")
     st.sidebar.subheader("🏆 Průběžné pořadí")
     
-    # --- OPRAVENÝ ŽEBŘÍČEK: ABSOLUTNÍ ZAROVNÁNÍ ---
     serazeni_hraci = sorted(UZIVATELE.items(), key=lambda x: x[1]['body'], reverse=True)
     medaile = ["🥇", "🥈", "🥉"]
     
@@ -404,7 +402,6 @@ else:
         je_zapas_ukoncen = str(z.get("Stav", "")).lower() == "ukonceno"
         skore_text = f" ({z.get('Vysledek', '')})" if z.get('Vysledek') else ""
         
-        # --- VÝPOČET ODPOČTU DO TITULKU ---
         odpocet_titulek = ""
         vnitrni_odpocet_html = ""
         
@@ -621,7 +618,7 @@ else:
             else: st.caption("Zatím nebyl odehrán ani vyhodnocen žádný zápas turnaje.")
 
     # ==========================================
-    # ZÁLOŽKA 2: MATCH CENTER / GRAF SÁZEK
+    # ZÁLOZY 2: MATCH CENTER / GRAF SÁZEK
     # ==========================================
     with tab2:
         st.subheader("📜 Moje tipy a graf")
@@ -725,7 +722,6 @@ else:
                         st.markdown("---")
                        
                         if stavajici_tip:
-                            # 🃏 KONTROLA A ZOBRAZENÍ AKTIVNÍHO ŽOLÍKA (Bezpečné odsazení a get) 🃏
                             if str(stavajici_tip.get("Zolik", "Ne")).lower() == "ano":
                                 st.markdown("""
                                     <div style='background-color: #2a2a15; padding: 8px; border: 1px solid #FFF200; border-radius: 4px; margin-bottom: 12px; text-align: center;'>
@@ -813,7 +809,7 @@ else:
         
         max_bodovych_restu = round(max_bodovych_restu, 2)
 
-        # --- 🚀 SKOKAN DNE (SUMA BODŮ ZA POSLEDNÍ KOMPLETNÝ ODEHRANÝ DEN) ---
+        # --- 🚀 SKOKAN DNE (SUMA BODŮ ZA POSLEDNÍ KOMPLETNĚ ODEHRANÝ DEN) ---
         skokan_jmeno = None
         skokan_zisk = -999.0
         posledni_den_text = ""
@@ -1028,12 +1024,6 @@ else:
             st.warning("Sem mají přístup pouze administrátoři.")
         else:
             st.subheader("⚙️ Ovládací panel administrátora")
-            
-            # 🔥 DEFINITIVNÍ ABSOLUTNÍ FIX: Načteme data hned na startu Admin tabu,
-            # aby proměnné existovaly pro jakýkoliv výpis nebo smyčku níže!
-            data_zapasy = nacti_zapasy()
-            vsechny_sazky = nacti_sazky()
-            
             if st.button("🔄 Stáhnout čerstvé zápasy a kurzy", type="secondary"):
                 SPORT = "soccer_fifa_world_cup" 
                 url = f"https://api.the-odds-api.com/v4/sports/{SPORT}/odds/?apiKey={API_KEY_ODDS}&regions=eu&markets=h2h,totals"
@@ -1201,7 +1191,6 @@ else:
                                         v_g = "vyhra"
                                         body_zisk += float(s["Kurz_Goly"])
                                         
-                                    # 🔥 ŽOLÍKOVÁ NÁSOBIČKA BODŮ (S .get POJISTKOU) 🔥
                                     if str(s.get("Zolik", "Ne")).lower() == "ano":
                                         body_zisk = body_zisk * 2    
                                         
