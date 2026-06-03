@@ -742,9 +742,8 @@ else:
                         st.markdown(html_vlajky, unsafe_allow_html=True)
                         st.markdown("---")
                         # --- KONEC: VLAJKY VEDLE SEBE ---
-                        
+                       
                         if stavajici_tip:
-                            if stavajici_tip:
                             # 🃏 KONTROLA A ZOBRAZENÍ AKTIVNÍHO ŽOLÍKA 🃏
                             if str(stavajici_tip.get("Zolik", "")).lower() == "ano":
                                 st.markdown("""
