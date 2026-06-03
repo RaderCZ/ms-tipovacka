@@ -206,7 +206,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- NAPOJENÍ NA GOOGLE TABULKY (HYBRIDNÍ PRO LOKÁL I ONLINE) ---
+# --- NAPOJENÍ NA GOOGLE TABULKY ---
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 
 if "gspread_creds" in st.secrets:
@@ -245,7 +245,7 @@ st.title("⚽ MS 26 TIPOVAČKA")
 
 
 # ==========================================
-# OBRAZOVKA A: PŘIHLÁŠENÍ (Úplně izolovaná větev, Python dál nepokračuje)
+# OBRAZOVKA A: PŘIHLÁŠENÍ (ÚPLNĚ IZOLOVANÁ OD ZBYTKU KÓDU)
 # ==========================================
 if not st.session_state["prihlasen"]:
     st.subheader("Přihlášení do systému")
@@ -253,7 +253,6 @@ if not st.session_state["prihlasen"]:
     heslo = st.text_input("Heslo", type="password")
     
     if st.button("Přihlásit se", type="secondary"):
-        # Stáhneme data z tabulky POUZE v momentě, kdy klikne na tlačítko
         data_uzivatele_local = nacti_uzivatele()
         uzivatele_overeni = {}
         for radek in data_uzivatele_local:
@@ -269,10 +268,10 @@ if not st.session_state["prihlasen"]:
 
 
 # ==========================================
-# OBRAZOVKA B: CELÝ VNITŘEK TIPOVAČKY (Spustí se JEN pro přihlášeného hráče)
+# OBRAZOVKA B: CELÝ VNITŘEK TIPOVAČKY (PRO PŘIHLÁŠENÉHO UŽIVATELE)
 # ==========================================
 else:
-    # 🔥 DATA SE STAHOVÁNÍM Z GOOGLE SHEETS SE NAČTOU BEZPEČNĚ AŽ TADY 🔥
+    # 🔥 DATA SE TU NAČTOU AŽ PO ÚSPĚŠNÉM PŘIHLÁŠENÍ 🔥
     data_uzivatele = nacti_uzivatele()
     data_zapasy = nacti_zapasy()
     vsechny_sazky = nacti_sazky()
@@ -351,7 +350,6 @@ else:
     
     moje_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel", "")) == aktualni_uzivatel]
     
-    # Počítadlo žolíků
     pouziti_zolici = sum(1 for s in moje_sazky if str(s.get("Zolik", "Ne")).lower() == "ano")
     max_zoliku = 3  
     zbyva_zoliku = max(0, max_zoliku - pouziti_zolici)
@@ -364,7 +362,6 @@ else:
         st.session_state["uzivatel"] = ""
         st.rerun()
         
-    # --- BANTER BOX: NASTAVENÍ STATUSU ---
     st.sidebar.write("")
     stuj_status = UZIVATELE[aktualni_uzivatel].get("status", "") if aktualni_uzivatel in UZIVATELE else ""
     novy_status = st.sidebar.text_input("💬 Rýpni si do ostatních:", value=stuj_status, max_chars=60, key="banter_input")
@@ -401,7 +398,7 @@ else:
         st.sidebar.markdown(html_radek, unsafe_allow_html=True)
 
     # ==========================================
-    # 🛠 POMOCNÁ FUNKCE PRO VYKRESLENÍ DETAILU ZÁPASU (S ODPOČTEM ČASU)
+    # 🛠 POMOCNÁ FUNKCE PRO DETAIL ZÁPASU
     # ==========================================
     def vykresli_detail_zapasu(z, zapas_uzamcen, moje_sazky):
         stavajici_tip = next((s for s in moje_sazky if str(s.get("ID_zapasu")) == str(z["ID"])), None)
