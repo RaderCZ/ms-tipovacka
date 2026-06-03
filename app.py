@@ -231,25 +231,18 @@ def nacti_zapasy():
 def nacti_sazky():
     return client.open("Mistrovstvi_Tipovacka").worksheet("Sázky").get_all_records()
 
-# --- GLOBÁLNÍ NAČTENÍ DAT NA STARTU (ZAMEZÍ JAKÝMKOLIV NAMEERROR V CELÉM KÓDU) ---
 
-UZIVATELE = {}
-for radek in data_uzivatele:
-    jmeno = str(radek["Jméno"])
-    heslo = str(radek["Heslo"])
-    body = radek["Body"]
-    status = str(radek.get("Status", "")).strip()
-    UZIVATELE[jmeno] = {"heslo": heslo, "body": body, "status": status}
-
-# --- HLAVNÍ TITULEK ---
-st.title("⚽ MS 26 TIPOVAČKA")
-
+# --- INICIALIZACE STAVU PŘIHLÁŠENÍ ---
 if "prihlasen" not in st.session_state:
     st.session_state["prihlasen"] = False
     st.session_state["uzivatel"] = ""
 
+# --- HLAVNÍ TITULEK APLIKACE ---
+st.title("⚽ MS 26 TIPOVAČKA")
+
+
 # ==========================================
-# OBRAZOVKA: PŘIHLÁŠENÍ
+# OBRAZOVKA A: PŘIHLÁŠENÍ (BLESKOVÁ RYCHLOST, ŽÁDNÉ ZBYTEČNÉ NAČÍTÁNÍ PŘEDEM)
 # ==========================================
 if not st.session_state["prihlasen"]:
     st.subheader("Přihlášení do systému")
@@ -257,13 +250,13 @@ if not st.session_state["prihlasen"]:
     heslo = st.text_input("Heslo", type="password")
     
     if st.button("Přihlásit se", type="secondary"):
-        # NAČTEME UŽIVATELE JEN PŘI KLIKNUTÍ NA PŘIHLÁSIT:
-        data_uzivatele = nacti_uzivatele()
-        UZIVATELE_TEMP = {}
-        for radek in data_uzivatele:
-            UZIVATELE_TEMP[str(radek["Jméno"])] = {"heslo": str(radek["Heslo"]), "body": radek["Body"], "status": str(radek.get("Status", "")).strip()}
+        # Načteme uživatele z tabulky čistě jen pro ověření hesla při kliknutí
+        data_uzivatele_temp = nacti_uzivatele()
+        uzivatele_overeni = {}
+        for radek in data_uzivatele_temp:
+            uzivatele_overeni[str(radek["Jméno"])] = str(radek["Heslo"])
             
-        if jmeno in UZIVATELE_TEMP and UZIVATELE_TEMP[jmeno]["heslo"] == heslo:
+        if jmeno in uzivatele_overeni and uzivatele_overeni[jmeno] == heslo:
             st.session_state["prihlasen"] = True
             st.session_state["uzivatel"] = jmeno
             st.success(f"Vítej, {jmeno}!")
@@ -271,20 +264,26 @@ if not st.session_state["prihlasen"]:
         else:
             st.error("Nesprávné jméno nebo heslo!")
 
+
 # ==========================================
-# OBRAZOVKA: PO PŘIHLÁŠENÍ
+# OBRAZOVKA B: VNITŘEK TIPOVAČKY (ZOBRAZÍ SE AŽ PO PŘIHLÁŠENÍ)
 # ==========================================
 else:
-    # 🔥 RYCHLOSTNÍ FIX: Data se načtou až po přihlášení a jen jednou za herní krok
+    # 🔥 RYCHLOSTNÍ A BEZPEČNOSTNÍ FIX: Všechna data se načtou až v této chvíli
     data_uzivatele = nacti_uzivatele()
     data_zapasy = nacti_zapasy()
     vsechny_sazky = nacti_sazky()
 
+    # Sestavení slovníku uživatelů
     UZIVATELE = {}
     for radek in data_uzivatele:
-        jmeno = str(radek["Jméno"])
-        UZIVATELE[jmeno] = {"heslo": str(radek["Heslo"]), "body": radek["Body"], "status": str(radek.get("Status", "")).strip()}
-        
+        jm = str(radek["Jméno"])
+        UZIVATELE[jm] = {
+            "heslo": str(radek["Heslo"]),
+            "body": radek["Body"],
+            "status": str(radek.get("Status", "")).strip()
+        }
+
     PREKLAD_TYMU = {
         "Canada": {"jmeno": "Kanada", "kod": "ca"}, "Mexico": {"jmeno": "Mexiko", "kod": "mx"}, "USA": {"jmeno": "USA", "kod": "us"},
         "England": {"jmeno": "Anglie", "kod": "gb-eng"}, "Austria": {"jmeno": "Rakousko", "kod": "at"}, "Belgium": {"jmeno": "Belgie", "kod": "be"},
@@ -327,7 +326,7 @@ else:
         "Orlando City SC": {"jmeno": "Orlando City", "kod": "us"},
         "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
         "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
-        "Real Salt Lake": {"jborne": "Real Salt Lake", "kod": "us"},
+        "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
         "San Diego FC": {"jmeno": "San Diego", "kod": "us"},
         "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
         "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
@@ -342,18 +341,17 @@ else:
     aktualni_uzivatel = st.session_state["uzivatel"]
     aktualni_body = UZIVATELE[aktualni_uzivatel]["body"]
     
-    # --- SIDEBAR ---
+    # --- SIDEBAR VÝPISY ---
     st.sidebar.write(f"👤 Hráč: **{aktualni_uzivatel}**")
     st.sidebar.write(f"✨ Body: **{aktualni_body} b.**")
     
     moje_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel", "")) == aktualni_uzivatel]
     
-    # Spočítáme, kolik žolíků už uživatel celkem použil
+    # Počítadlo žolíků
     pouziti_zolici = sum(1 for s in moje_sazky if str(s.get("Zolik", "Ne")).lower() == "ano")
     max_zoliku = 3  
     zbyva_zoliku = max(0, max_zoliku - pouziti_zolici)
     
-    # Vytvoření ikon žolíků (např. 🃏 🃏 ❌)
     ikony_zoliku = " ".join(["🃏"] * zbyva_zoliku + ["❌"] * pouziti_zolici)
     st.sidebar.write(f"🃏 Žolíci: **{ikony_zoliku}** ({zbyva_zoliku} ze 3)")
     
@@ -583,7 +581,8 @@ else:
                         st.success("Tiket byl podán!")
                         st.rerun()
 
-    tab1, tab2, tab3, tab4 = st.tabs(["📅 Kurzová nabídka", "📜 Moje tipy", "📊 Statistiky", "⚙️ Admin"])
+    tabs = st.tabs(["📅 Kurzová nabídka", "📜 Moje tipy", "📊 Statistiky", "⚙️ Admin"])
+    tab1, tab2, tab3, tab4 = tabs[0], tabs[1], tabs[2], tabs[3]
 
     # ==========================================
     # ZÁLOŽKA 1: KURZOVÁ NABÍDKA
@@ -631,7 +630,7 @@ else:
             else: st.caption("Zatím nebyl odehrán ani vyhodnocen žádný zápas turnaje.")
 
     # ==========================================
-    # ZÁLOZY 2: MATCH CENTER / GRAF SÁZEK
+    # ZÁLOŽKA 2: MATCH CENTER / GRAF SÁZEK
     # ==========================================
     with tab2:
         st.subheader("📜 Moje tipy a graf")
@@ -779,9 +778,6 @@ else:
     with tab3:
         st.subheader("🏟️ Statistiky turnaje")
 
-        ukoncene_zapasy = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
-        celkem_odehrano = len(ukoncene_zapasy)
-
         goly_celkem = 0
         over_25 = 0
         under_25 = 0
@@ -822,7 +818,7 @@ else:
         
         max_bodovych_restu = round(max_bodovych_restu, 2)
 
-        # --- 🚀 SKOKAN DNE (SUMA BODŮ ZA POSLEDNÍ KOMPLETNĚ ODEHRANÝ DEN) ---
+        # --- SKOKAN DNE ---
         skokan_jmeno = None
         skokan_zisk = -999.0
         posledni_den_text = ""
@@ -856,10 +852,9 @@ else:
                         if body_za_den > skokan_zisk:
                             skokan_zisk = body_za_den
                             skokan_jmeno = hr
-            except:
-                pass
+            except: pass
 
-        # --- 📊 KOLEKTIVNÍ ROZUM (SHODA VŠECH TŘÍ HRÁČŮ) ---
+        # --- KOLEKTIVNÍ ROZUM ---
         shodne_tipy_celkem = 0
         shodne_tipy_vyhry = 0
         vsichni_hraci_list = list(UZIVATELE.keys())
