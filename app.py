@@ -332,6 +332,18 @@ else:
     st.sidebar.write(f"👤 Hráč: **{aktualni_uzivatel}**")
     st.sidebar.write(f"✨ Body: **{aktualni_body} b.**")
     
+    vsechny_sazky = nacti_sazky()
+    moje_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel", "")) == aktualni_uzivatel]
+    
+    # Spočítáme, kolik žolíků už uživatel celkem použil
+    pouziti_zolici = sum(1 for s in moje_sazky if str(s.get("Zolik", "")).lower() == "ano")
+    max_zoliku = 3  # Limit na základní skupiny
+    zbyva_zoliku = max(0, max_zoliku - pouziti_zolici)
+    
+    # Vytvoření ikon žolíků (např. 🃏 🃏 ❌)
+    ikony_zoliku = " ".join(["🃏"] * zbyva_zoliku + ["❌"] * pouziti_zolici)
+    st.sidebar.write(f"🃏 Žolíci: **{ikony_zoliku}** ({zbyva_zoliku} ze 3)")
+    
     if st.sidebar.button("Odhlásit se"):
         st.session_state["prihlasen"] = False
         st.session_state["uzivatel"] = ""
@@ -382,10 +394,6 @@ else:
         </div>
         """
         st.sidebar.markdown(html_radek, unsafe_allow_html=True)
-
-    vsechny_sazky = nacti_sazky()
-    moje_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel", "")) == aktualni_uzivatel]
-    data_zapasy = nacti_zapasy()
 
     # ==========================================
     # 🛠 POMOCNÁ FUNKCE PRO VYKRESLENÍ DETAILU ZÁPASU (S ODPOČTEM ČASU)
@@ -534,7 +542,22 @@ else:
                         
                 max_body = round(k_1x2 + k_goly, 2)
                 if ma_1x2 or ma_goly:
-                    st.info(f"💡 Potenciální zisk v případě úspěchu: **{max_body} bodů**.")
+                    # Kontrola, zda už na tento konkrétní zápas náhodou žolík nebyl vsazen dříve
+                    uz_ma_zolika = stavajici_tip and str(stavajici_tip.get("Zolik", "")).lower() == "ano"
+                    
+                    # Zaškrtávátko se ukáže jen pokud zbývají žolíci, NEBO pokud už na tento zápas žolík vsazen je (aby šel případně zrušit)
+                    chce_zolika = False
+                    if zbyva_zoliku > 0 or uz_ma_zolika:
+                        chce_zolika = st.checkbox("🃏 Aktivovat ŽOLÍKA (Dvojnásobné body v případě výhry!)", value=uz_ma_zolika, key=f"zol_{z['ID']}")
+                    else:
+                        st.caption("❌ Už jsi vyčerpal všech 3 žolíky pro tuto fázi.")
+                    
+                    # Pokud je zaškrtnutý žolík, ukážeme dvojnásobný zisk
+                    if chce_zolika:
+                        max_body = round(max_body * 2, 2)
+                        st.info(f"🃏 **ŽOLÍK AKTIVNÍ!** Potenciální zisk: **{max_body} bodů**.")
+                    else:
+                        st.info(f"💡 Potenciální zisk v případě úspěchu: **{max_body} bodů**.")
                     text_tlacitka = "🔄 AKTUALIZOVAT TIKET" if stavajici_tip else "💾 VSADIT TIKET"
                     
                     if st.button(text_tlacitka, key=f"btn_{z['ID']}", type="primary"):
@@ -550,10 +573,11 @@ else:
                         novy_radek = [
                             aktualni_uzivatel, z['ID'], f"{t_domaci['jmeno']}-{t_hoste['jmeno']}",
                             volba_1x2, k_1x2, volba_goly, k_goly,
-                            "ceka" if ma_1x2 else "prohra", "ceka" if ma_goly else "prohra", 0, "ceka"
+                            "ceka" if ma_1x2 else "prohra", "ceka" if ma_goly else "prohra", 0, "ceka",
+                            "Ano" if chce_zolika else "Ne"
                         ]
                         with st.spinner("Odesílám tiket..."):
-                            if radek_pro_zapis: sheet_sazky.update(f"A{radek_pro_zapis}:K{radek_pro_zapis}", [novy_radek])
+                            if radek_pro_zapis: sheet_sazky.update(f"A{radek_pro_zapis}:L{radek_pro_zapis}", [novy_radek]) # Změna na L
                             else: sheet_sazky.append_row(novy_radek)
                                 
                         st.cache_data.clear()
@@ -720,6 +744,15 @@ else:
                         # --- KONEC: VLAJKY VEDLE SEBE ---
                         
                         if stavajici_tip:
+                            if stavajici_tip:
+                            # 🃏 KONTROLA A ZOBRAZENÍ AKTIVNÍHO ŽOLÍKA 🃏
+                            if str(stavajici_tip.get("Zolik", "")).lower() == "ano":
+                                st.markdown("""
+                                    <div style='background-color: #2a2a15; padding: 8px; border: 1px solid #FFF200; border-radius: 4px; margin-bottom: 12px; text-align: center;'>
+                                        <span style='color: #FFF200; font-weight: bold; font-size: 14px; letter-spacing: 0.5px;'>🃏 NA TENTO ZÁPAS MÁŠ AKTIVNÍHO ŽOLÍKA (2X BODY)</span>
+                                    </div>
+                                """, unsafe_allow_html=True)
+
                             if is_vyhodnoceno: st.markdown(f"🏆 **Tiket vyhodnocen! Zisk: {stavajici_tip.get('Body_Ziskane', 0)} b.**")
                             else: st.markdown("**Tvůj podaný tiket:**")
                                 
@@ -1191,6 +1224,9 @@ else:
                                     elif t_g == "Méně" and total_g < 2.5: 
                                         v_g = "vyhra"
                                         body_zisk += float(s["Kurz_Goly"])
+                                    # 🔥 ŽOLÍKOVÁ NÁSOBIČKA BODŮ 🔥
+                                    if str(s.get("Zolik", "")).lower() == "ano":
+                                        body_zisk = body_zisk * 2    
                                         
                                     sazky_list[i]["Stav_1X2"] = v_1x2
                                     sazky_list[i]["Stav_Goly"] = v_g
