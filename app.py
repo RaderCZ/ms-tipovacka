@@ -218,7 +218,7 @@ else:
 
 client = gspread.authorize(creds)
 
-# --- 🧠 PAMĚŤOVÉ FUNKCE (OCHRANA PREED ERROR 429) ---
+# --- 🧠 PAMĚŤOVÉ FUNKCE (OCHRANA PŘED ERROR 429) ---
 @st.cache_data(ttl=30)
 def nacti_uzivatele():
     try: return client.open("Mistrovstvi_Tipovacka").worksheet("Uzivatele").get_all_records()
@@ -235,44 +235,17 @@ def nacti_sazky():
     except: return []
 
 
-# --- 🔥 ABSOLUTNÍ NEPRŮSTŘELNÁ INICIALIZACE PROMĚNNÝCH PROTI NAMEERROR 🔥 ---
-data_uzivatele = []
-data_zapasy = []
-vsechny_sazky = []
-
-# Pokusíme se bezpečně naplnit data hned na startu
-try: data_uzivatele = nacti_uzivatele()
-except: pass
-
-try: data_zapasy = nacti_zapasy()
-except: pass
-
-try: vsechny_sazky = nacti_sazky()
-except: pass
-
-# Sestavení slovníku uživatelů pro celou aplikaci
-UZIVATELE = {}
-if data_uzivatele:
-    for radek in data_uzivatele:
-        jmeno = str(radek.get("Jméno", ""))
-        if jmeno:
-            UZIVATELE[jmeno] = {
-                "heslo": str(radek.get("Heslo", "")),
-                "body": radek.get("Body", 0),
-                "status": str(radek.get("Status", "")).strip()
-            }
-
 # --- INICIALIZACE STAVU PŘIHLÁŠENÍ ---
 if "prihlasen" not in st.session_state:
     st.session_state["prihlasen"] = False
     st.session_state["uzivatel"] = ""
 
-# --- HLAVNÍ TITULEK ---
+# --- HLAVNÍ TITULEK APLIKACE ---
 st.title("⚽ MS 26 TIPOVAČKA")
 
 
 # ==========================================
-# OBRAZOVKA A: PŘIHLÁŠENÍ
+# OBRAZOVKA A: PŘIHLÁŠENÍ (Úplně izolovaná větev, Python dál nepokračuje)
 # ==========================================
 if not st.session_state["prihlasen"]:
     st.subheader("Přihlášení do systému")
@@ -280,19 +253,41 @@ if not st.session_state["prihlasen"]:
     heslo = st.text_input("Heslo", type="password")
     
     if st.button("Přihlásit se", type="secondary"):
-        if UZIVATELE and jmeno in UZIVATELE and UZIVATELE[jmeno]["heslo"] == heslo:
+        # Stáhneme data z tabulky POUZE v momentě, kdy klikne na tlačítko
+        data_uzivatele_local = nacti_uzivatele()
+        uzivatele_overeni = {}
+        for radek in data_uzivatele_local:
+            uzivatele_overeni[str(radek.get("Jméno", ""))] = str(radek.get("Heslo", ""))
+            
+        if jmeno in uzivatele_overeni and uzivatele_overeni[jmeno] == heslo:
             st.session_state["prihlasen"] = True
             st.session_state["uzivatel"] = jmeno
             st.success(f"Vítej, {jmeno}!")
             st.rerun()
         else:
-            st.error("Nesprávné jméno nebo heslo (nebo se nepodařilo načíst databázi z Google Sheets)!")
+            st.error("Nesprávné jméno nebo heslo!")
 
 
 # ==========================================
-# OBRAZOVKA B: VNITŘEK APLIKACE (PO PŘIHLÁŠENÍ)
+# OBRAZOVKA B: CELÝ VNITŘEK TIPOVAČKY (Spustí se JEN pro přihlášeného hráče)
 # ==========================================
 else:
+    # 🔥 DATA SE STAHOVÁNÍM Z GOOGLE SHEETS SE NAČTOU BEZPEČNĚ AŽ TADY 🔥
+    data_uzivatele = nacti_uzivatele()
+    data_zapasy = nacti_zapasy()
+    vsechny_sazky = nacti_sazky()
+
+    # Sestavení slovníku uživatelů
+    UZIVATELE = {}
+    for radek in data_uzivatele:
+        jm_klic = str(radek.get("Jméno", ""))
+        if jm_klic:
+            UZIVATELE[jm_klic] = {
+                "heslo": str(radek.get("Heslo", "")),
+                "body": radek.get("Body", 0),
+                "status": str(radek.get("Status", "")).strip()
+            }
+
     PREKLAD_TYMU = {
         "Canada": {"jmeno": "Kanada", "kod": "ca"}, "Mexico": {"jmeno": "Mexiko", "kod": "mx"}, "USA": {"jmeno": "USA", "kod": "us"},
         "England": {"jmeno": "Anglie", "kod": "gb-eng"}, "Austria": {"jmeno": "Rakousko", "kod": "at"}, "Belgium": {"jmeno": "Belgie", "kod": "be"},
@@ -369,7 +364,7 @@ else:
         st.session_state["uzivatel"] = ""
         st.rerun()
         
-    # --- BANTER BOX ---
+    # --- BANTER BOX: NASTAVENÍ STATUSU ---
     st.sidebar.write("")
     stuj_status = UZIVATELE[aktualni_uzivatel].get("status", "") if aktualni_uzivatel in UZIVATELE else ""
     novy_status = st.sidebar.text_input("💬 Rýpni si do ostatních:", value=stuj_status, max_chars=60, key="banter_input")
@@ -406,7 +401,7 @@ else:
         st.sidebar.markdown(html_radek, unsafe_allow_html=True)
 
     # ==========================================
-    # 🛠 POMOCNÁ FUNKCE PRO DETAIL ZÁPASU
+    # 🛠 POMOCNÁ FUNKCE PRO VYKRESLENÍ DETAILU ZÁPASU (S ODPOČTEM ČASU)
     # ==========================================
     def vykresli_detail_zapasu(z, zapas_uzamcen, moje_sazky):
         stavajici_tip = next((s for s in moje_sazky if str(s.get("ID_zapasu")) == str(z["ID"])), None)
@@ -769,12 +764,15 @@ else:
     with tab3:
         st.subheader("🏟️ Statistiky turnaje")
 
+        ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
+        celkem_odehrano_local = len(ukoncene_zapasy_local)
+
         goly_celkem = 0
         over_25 = 0
         under_25 = 0
         btts_celkem = 0
 
-        for zp in ukoncene_zapasy:
+        for zp in ukoncene_zapasy_local:
             try:
                 hg, ag = map(int, str(zp.get("Vysledek")).split(":"))
                 total_g = hg + ag
@@ -784,10 +782,10 @@ else:
                 if hg > 0 and ag > 0: btts_celkem += 1
             except: pass
 
-        avg_goly = round(goly_celkem / celkem_odehrano, 2) if celkem_odehrano > 0 else 0.0
-        p_over = round((over_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
-        p_under = round((under_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
-        p_btts = round((btts_celkem / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
+        avg_goly = round(goly_celkem / celkem_odehrano_local, 2) if celkem_odehrano_local > 0 else 0.0
+        p_over = round((over_25 / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
+        p_under = round((under_25 / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
+        p_btts = round((btts_celkem / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
 
         max_bodovych_restu = 0.0
         for zp in data_zapasy:
@@ -813,10 +811,10 @@ else:
         skokan_zisk = -999.0
         posledni_den_text = ""
         
-        if celkem_odehrano >= 1:
+        if celkem_odehrano_local >= 1:
             try:
                 dny_odehrano = []
-                for zp in ukoncene_zapasy:
+                for zp in ukoncene_zapasy_local:
                     if zp.get("Datum"):
                         jen_den = str(zp["Datum"]).split()[0]
                         dny_odehrano.append(jen_den)
@@ -862,11 +860,11 @@ else:
 
         kolektivni_uspech_pct = round((shodne_tipy_vyhry / shodne_tipy_celkem) * 100, 1) if shodne_tipy_celkem > 0 else 0.0
 
-        if celkem_odehrano == 0 and max_bodovych_restu == 0:
+        if celkem_odehrano_local == 0 and max_bodovych_restu == 0:
             st.info("ℹ️ Turnajové statistiky budou dostupné, jakmile se do systému nahrají zápasy.")
         else:
             c1, c2, c3 = st.columns(3)
-            with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano} ⚽")
+            with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano_local} ⚽")
             with c2: st.metric("Gólový průměr", f"{avg_goly} 🔥")
             with c3: st.metric("Zápasy, kdy skórovaly oba", f"{p_btts} %")
 
@@ -978,7 +976,6 @@ else:
             acc_celkova = round((celkem_vyher / celkem_tipu) * 100, 1) if celkem_tipu > 0 else 0.0
             acc_1x2 = round((dt["t_1x2_v"] / dt["t_1x2_c"]) * 100, 1) if dt["t_1x2_c"] > 0 else 0.0
             acc_goly = round((dt["t_g_v"] / dt["t_g_c"]) * 100, 1) if dt["t_g_c"] > 0 else 0.0
-            
             celkem_g_sazek = dt["over_sazky"] + dt["under_sazky"]
             p_over_sazek = round((dt["over_sazky"] / celkem_g_sazek) * 100, 1) if celkem_g_sazek > 0 else 50.0
             
@@ -1088,7 +1085,6 @@ else:
                             k.get("Vysledek",""), k.get("Stav","aktivni")
                         ])
 
-                    sheet_z = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
                     sheet_z.clear()
                     sheet_z.append_rows([hlavicka_zapasy] + finalni_radky)
                     st.cache_data.clear(); st.success("✅ Kurzová nabídka byla bezpečně aktualizována!"); st.rerun()
