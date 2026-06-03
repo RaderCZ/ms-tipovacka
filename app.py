@@ -232,9 +232,6 @@ def nacti_sazky():
     return client.open("Mistrovstvi_Tipovacka").worksheet("Sázky").get_all_records()
 
 # --- GLOBÁLNÍ NAČTENÍ DAT NA STARTU (ZAMEZÍ JAKÝMKOLIV NAMEERROR V CELÉM KÓDU) ---
-data_uzivatele = nacti_uzivatele()
-data_zapasy = nacti_zapasy()
-vsechny_sazky = nacti_sazky()
 
 UZIVATELE = {}
 for radek in data_uzivatele:
@@ -260,7 +257,13 @@ if not st.session_state["prihlasen"]:
     heslo = st.text_input("Heslo", type="password")
     
     if st.button("Přihlásit se", type="secondary"):
-        if jmeno in UZIVATELE and UZIVATELE[jmeno]["heslo"] == heslo:
+        # NAČTEME UŽIVATELE JEN PŘI KLIKNUTÍ NA PŘIHLÁSIT:
+        data_uzivatele = nacti_uzivatele()
+        UZIVATELE_TEMP = {}
+        for radek in data_uzivatele:
+            UZIVATELE_TEMP[str(radek["Jméno"])] = {"heslo": str(radek["Heslo"]), "body": radek["Body"], "status": str(radek.get("Status", "")).strip()}
+            
+        if jmeno in UZIVATELE_TEMP and UZIVATELE_TEMP[jmeno]["heslo"] == heslo:
             st.session_state["prihlasen"] = True
             st.session_state["uzivatel"] = jmeno
             st.success(f"Vítej, {jmeno}!")
@@ -272,6 +275,16 @@ if not st.session_state["prihlasen"]:
 # OBRAZOVKA: PO PŘIHLÁŠENÍ
 # ==========================================
 else:
+    # 🔥 RYCHLOSTNÍ FIX: Data se načtou až po přihlášení a jen jednou za herní krok
+    data_uzivatele = nacti_uzivatele()
+    data_zapasy = nacti_zapasy()
+    vsechny_sazky = nacti_sazky()
+
+    UZIVATELE = {}
+    for radek in data_uzivatele:
+        jmeno = str(radek["Jméno"])
+        UZIVATELE[jmeno] = {"heslo": str(radek["Heslo"]), "body": radek["Body"], "status": str(radek.get("Status", "")).strip()}
+        
     PREKLAD_TYMU = {
         "Canada": {"jmeno": "Kanada", "kod": "ca"}, "Mexico": {"jmeno": "Mexiko", "kod": "mx"}, "USA": {"jmeno": "USA", "kod": "us"},
         "England": {"jmeno": "Anglie", "kod": "gb-eng"}, "Austria": {"jmeno": "Rakousko", "kod": "at"}, "Belgium": {"jmeno": "Belgie", "kod": "be"},
