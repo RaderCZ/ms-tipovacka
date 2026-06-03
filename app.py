@@ -4,7 +4,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import requests
 from datetime import datetime, timedelta
 
-# --- 🎨 TUNING IFORTUNA.CZ + FONT ROBOTO (ABSOLUTNÍ FIX PRO TEXTY TLAČÍTEK PŘI HOVERU) ---
+# --- 🎨 TUNING IFORTUNA.CZ + FONT ROBOTO ---
 st.set_page_config(page_title="MS 2026 - Tipovačka", page_icon="⚽", layout="centered")
 
 st.markdown("""
@@ -245,7 +245,7 @@ st.title("⚽ MS 26 TIPOVAČKA")
 
 
 # ==========================================
-# OBRAZOVKA A: PŘIHLÁŠENÍ (ÚPLNĚ IZOLOVANÁ OD ZBYTKU KÓDU)
+# OBRAZOVKA A: PŘIHLÁŠENÍ (Úplně čistá zóna bez tabulkových proměnných)
 # ==========================================
 if not st.session_state["prihlasen"]:
     st.subheader("Přihlášení do systému")
@@ -268,10 +268,10 @@ if not st.session_state["prihlasen"]:
 
 
 # ==========================================
-# OBRAZOVKA B: CELÝ VNITŘEK TIPOVAČKY (PRO PŘIHLÁŠENÉHO UŽIVATELE)
+# OBRAZOVKA B: CELÝ VNITŘEK TIPOVAČKY (Spustí se JEN pro přihlášeného hráče)
 # ==========================================
 else:
-    # 🔥 DATA SE TU NAČTOU AŽ PO ÚSPĚŠNÉM PŘIHLÁŠENÍ 🔥
+    # 🔥 DATA SE STAHOVÁNÍM Z GOOGLE SHEETS SE BEZPEČNĚ NAČTOU AŽ TADY 🔥
     data_uzivatele = nacti_uzivatele()
     data_zapasy = nacti_zapasy()
     vsechny_sazky = nacti_sazky()
