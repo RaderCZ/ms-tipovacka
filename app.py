@@ -221,28 +221,99 @@ client = gspread.authorize(creds)
 # --- 🧠 PAMĚŤOVÉ FUNKCE (OCHRANA PŘED ERROR 429) ---
 @st.cache_data(ttl=30)
 def nacti_uzivatele():
-    return client.open("Mistrovstvi_Tipovacka").worksheet("Uzivatele").get_all_records()
+    try: return client.open("Mistrovstvi_Tipovacka").worksheet("Uzivatele").get_all_records()
+    except: return []
 
 @st.cache_data(ttl=30)
 def nacti_zapasy():
-    return client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy").get_all_records()
+    try: return client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy").get_all_records()
+    except: return []
 
 @st.cache_data(ttl=30)
 def nacti_sazky():
-    return client.open("Mistrovstvi_Tipovacka").worksheet("Sázky").get_all_records()
+    try: return client.open("Mistrovstvi_Tipovacka").worksheet("Sázky").get_all_records()
+    except: return []
 
+
+# --- 🔥 GLOBÁLNÍ BEZPEČNÉ NAČTENÍ DAT (ZAMEZÍ JAKÝMKOLIV NAMEERROR V CELÉM KÓDU) ---
+data_uzivatele = nacti_uzivatele()
+data_zapasy = nacti_zapasy()
+vsechny_sazky = nacti_sazky()
+
+# Sestavení slovníku uživatelů pro celou aplikaci
+UZIVATELE = {}
+for radek in data_uzivatele:
+    jmeno = str(radek.get("Jméno", ""))
+    if jmeno:
+        UZIVATELE[jmeno] = {
+            "heslo": str(radek.get("Heslo", "")),
+            "body": radek.get("Body", 0),
+            "status": str(radek.get("Status", "")).strip()
+        }
 
 # --- INICIALIZACE STAVU PŘIHLÁŠENÍ ---
 if "prihlasen" not in st.session_state:
     st.session_state["prihlasen"] = False
     st.session_state["uzivatel"] = ""
 
-# --- HLAVNÍ TITULEK APLIKACE ---
-st.title("⚽ MS 26 TIPOVAČKA")
+# --- STRUKTURA TÝMŮ ---
+PREKLAD_TYMU = {
+    "Canada": {"jmeno": "Kanada", "kod": "ca"}, "Mexico": {"jmeno": "Mexiko", "kod": "mx"}, "USA": {"jmeno": "USA", "kod": "us"},
+    "England": {"jmeno": "Anglie", "kod": "gb-eng"}, "Austria": {"jmeno": "Rakousko", "kod": "at"}, "Belgium": {"jmeno": "Belgie", "kod": "be"},
+    "Bosnia & Herzegovina": {"jmeno": "Bosna a Herc.", "kod": "ba"}, "Croatia": {"jmeno": "Chorvatsko", "kod": "hr"}, "Czech Republic": {"jmeno": "Česko", "kod": "cz"},
+    "France": {"jmeno": "Francie", "kod": "fr"}, "Germany": {"jmeno": "Německo", "kod": "de"}, "Netherlands": {"jmeno": "Nizozemsko", "kod": "nl"},
+    "Norway": {"jmeno": "Norsko", "kod": "no"}, "Portugal": {"jmeno": "Portugalsko", "kod": "pt"}, "Scotland": {"jmeno": "Skotsko", "kod": "gb-sct"},
+    "Spain": {"jmeno": "Španělsko", "kod": "es"}, "Sweden": {"jmeno": "Švédsko", "kod": "se"}, "Switzerland": {"jmeno": "Švýcarsko", "kod": "ch"}, "Turkey": {"jmeno": "Turecko", "kod": "tr"},
+    "Argentina": {"jmeno": "Argentina", "kod": "ar"}, "Brazil": {"jmeno": "Brazílie", "kod": "br"}, "Ecuador": {"jmeno": "Ekvádor", "kod": "ec"},
+    "Colombia": {"jmeno": "Kolumbie", "kod": "co"}, "Paraguay": {"jmeno": "Paraguay", "kod": "py"}, "Uruguay": {"jmeno": "Uruguay", "kod": "uy"},
+    "Algeria": {"jmeno": "Alžírsko", "kod": "dz"}, "Egypt": {"jmeno": "Egypt", "kod": "eg"}, "Ghana": {"jmeno": "Ghana", "kod": "gh"},
+    "DR Congo": {"jmeno": "DR Kongo", "kod": "cd"}, "Cape Verde": {"jmeno": "Kapverdy", "kod": "cv"}, "Morocco": {"jmeno": "Maroko", "kod": "ma"},
+    "Ivory Coast": {"jmeno": "Pobřeží slonoviny", "kod": "ci"}, "Senegal": {"jmeno": "Senegal", "kod": "sn"}, "Tunisia": {"jmeno": "Tunisko", "kod": "tn"}, "South Africa": {"jmeno": "Jihoafrická rep.", "kod": "za"},
+    "Australia": {"jmeno": "Austrálie", "kod": "au"}, "Iran": {"jmeno": "Írán", "kod": "ir"}, "Iraq": {"jmeno": "Irák", "kod": "iq"},
+    "Japan": {"jmeno": "Japonsko", "kod": "jp"}, "Jordan": {"jmeno": "Jordánsko", "kod": "jo"}, "Qatar": {"jmeno": "Katar", "kod": "qa"},
+    "Saudi Arabia": {"jmeno": "Saúdská Arábie", "kod": "sa"}, "South Korea": {"jmeno": "Jižní Korea", "kod": "kr"}, "Uzbekistan": {"jmeno": "Uzbekistán", "kod": "uz"},
+    "Curaçao": {"jmeno": "Curaçao", "kod": "cw"}, "Haiti": {"jmeno": "Haiti", "kod": "ht"}, "Panama": {"jmeno": "Panama", "kod": "pa"}, "New Zealand": {"jmeno": "Nový Zéland", "kod": "nz"},
+    
+    # --- MLS TÝMY PRO TESTOVÁNÍ ---
+    "Atlanta United FC": {"jmeno": "Atlanta Utd", "kod": "us"},
+    "Austin FC": {"jmeno": "Austin FC", "kod": "us"},
+    "Charlotte FC": {"jmeno": "Charlotte FC", "kod": "us"},
+    "Chicago Fire": {"jmeno": "Chicago Fire", "kod": "us"},
+    "Chicago Fire FC": {"jmeno": "Chicago Fire", "kod": "us"},
+    "FC Cincinnati": {"jmeno": "FC Cincinnati", "kod": "us"},
+    "Colorado Rapids": {"jmeno": "Colorado Rapids", "kod": "us"},
+    "Columbus Crew SC": {"jmeno": "Columbus Crew SC", "kod": "us"},
+    "FC Dallas": {"jmeno": "FC Dallas", "kod": "us"},
+    "D.C. United": {"jmeno": "D.C. United", "kod": "us"},
+    "Houston Dynamo": {"jmeno": "Houston Dynamo", "kod": "us"},
+    "Sporting Kansas City": {"jmeno": "Sporting KC", "kod": "us"},
+    "LA Galaxy": {"jmeno": "LA Galaxy", "kod": "us"},
+    "Los Angeles FC": {"jmeno": "Los Angeles FC", "kod": "us"},
+    "Inter Miami CF": {"jmeno": "Inter Miami", "kod": "us"},
+    "Minnesota United FC": {"jmeno": "Minnesota Utd", "kod": "us"},
+    "CF Montreal": {"jmeno": "CF Montreal", "kod": "ca"},
+    "Nashville SC": {"jmeno": "Nashville SC", "kod": "us"},
+    "New England Revolution": {"jmeno": "NE Revolution", "kod": "us"},
+    "New York City FC": {"jmeno": "New York City", "kod": "us"},
+    "New York Red Bulls": {"jmeno": "NY Red Bulls", "kod": "us"},
+    "Orlando City SC": {"jmeno": "Orlando City", "kod": "us"},
+    "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
+    "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
+    "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
+    "San Diego FC": {"jmeno": "San Diego", "kod": "us"},
+    "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
+    "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
+    "St. Louis City SC": {"jmeno": "St. Louis City", "kod": "us"},
+    "Toronto FC": {"jmeno": "Toronto FC", "kod": "ca"},
+    "Vancouver Whitecaps FC": {"jmeno": "Vancouver", "kod": "ca"}   
+}
+
+def dej_data_tymu(tym_z_api):
+    return PREKLAD_TYMU.get(tym_z_api, {"jmeno": tym_z_api, "kod": "un"})
 
 
 # ==========================================
-# OBRAZOVKA A: PŘIHLÁŠENÍ (BLESKOVÁ RYCHLOST, ŽÁDNÉ ZBYTEČNÉ NAČÍTÁNÍ PŘEDEM)
+# OBRAZOVKA 1: PŘIHLÁŠENÍ
 # ==========================================
 if not st.session_state["prihlasen"]:
     st.subheader("Přihlášení do systému")
@@ -250,13 +321,7 @@ if not st.session_state["prihlasen"]:
     heslo = st.text_input("Heslo", type="password")
     
     if st.button("Přihlásit se", type="secondary"):
-        # Načteme uživatele z tabulky čistě jen pro ověření hesla při kliknutí
-        data_uzivatele_temp = nacti_uzivatele()
-        uzivatele_overeni = {}
-        for radek in data_uzivatele_temp:
-            uzivatele_overeni[str(radek["Jméno"])] = str(radek["Heslo"])
-            
-        if jmeno in uzivatele_overeni and uzivatele_overeni[jmeno] == heslo:
+        if jmeno in UZIVATELE and UZIVATELE[jmeno]["heslo"] == heslo:
             st.session_state["prihlasen"] = True
             st.session_state["uzivatel"] = jmeno
             st.success(f"Vítej, {jmeno}!")
@@ -266,78 +331,9 @@ if not st.session_state["prihlasen"]:
 
 
 # ==========================================
-# OBRAZOVKA B: VNITŘEK TIPOVAČKY (ZOBRAZÍ SE AŽ PO PŘIHLÁŠENÍ)
+# OBRAZOVKA 2: VNITŘEK APLIKACE (PO PŘIHLÁŠENÍ)
 # ==========================================
 else:
-    # 🔥 RYCHLOSTNÍ A BEZPEČNOSTNÍ FIX: Všechna data se načtou až v této chvíli
-    data_uzivatele = nacti_uzivatele()
-    data_zapasy = nacti_zapasy()
-    vsechny_sazky = nacti_sazky()
-
-    # Sestavení slovníku uživatelů
-    UZIVATELE = {}
-    for radek in data_uzivatele:
-        jm = str(radek["Jméno"])
-        UZIVATELE[jm] = {
-            "heslo": str(radek["Heslo"]),
-            "body": radek["Body"],
-            "status": str(radek.get("Status", "")).strip()
-        }
-
-    PREKLAD_TYMU = {
-        "Canada": {"jmeno": "Kanada", "kod": "ca"}, "Mexico": {"jmeno": "Mexiko", "kod": "mx"}, "USA": {"jmeno": "USA", "kod": "us"},
-        "England": {"jmeno": "Anglie", "kod": "gb-eng"}, "Austria": {"jmeno": "Rakousko", "kod": "at"}, "Belgium": {"jmeno": "Belgie", "kod": "be"},
-        "Bosnia & Herzegovina": {"jmeno": "Bosna a Herc.", "kod": "ba"}, "Croatia": {"jmeno": "Chorvatsko", "kod": "hr"}, "Czech Republic": {"jmeno": "Česko", "kod": "cz"},
-        "France": {"jmeno": "Francie", "kod": "fr"}, "Germany": {"jmeno": "Německo", "kod": "de"}, "Netherlands": {"jmeno": "Nizozemsko", "kod": "nl"},
-        "Norway": {"jmeno": "Norsko", "kod": "no"}, "Portugal": {"jmeno": "Portugalsko", "kod": "pt"}, "Scotland": {"jmeno": "Skotsko", "kod": "gb-sct"},
-        "Spain": {"jmeno": "Španělsko", "kod": "es"}, "Sweden": {"jmeno": "Švédsko", "kod": "se"}, "Switzerland": {"jmeno": "Švýcarsko", "kod": "ch"}, "Turkey": {"jmeno": "Turecko", "kod": "tr"},
-        "Argentina": {"jmeno": "Argentina", "kod": "ar"}, "Brazil": {"jmeno": "Brazílie", "kod": "br"}, "Ecuador": {"jmeno": "Ekvádor", "kod": "ec"},
-        "Colombia": {"jmeno": "Kolumbie", "kod": "co"}, "Paraguay": {"jmeno": "Paraguay", "kod": "py"}, "Uruguay": {"jmeno": "Uruguay", "kod": "uy"},
-        "Algeria": {"jmeno": "Alžírsko", "kod": "dz"}, "Egypt": {"jmeno": "Egypt", "kod": "eg"}, "Ghana": {"jmeno": "Ghana", "kod": "gh"},
-        "DR Congo": {"jmeno": "DR Kongo", "kod": "cd"}, "Cape Verde": {"jmeno": "Kapverdy", "kod": "cv"}, "Morocco": {"jmeno": "Maroko", "kod": "ma"},
-        "Ivory Coast": {"jmeno": "Pobřeží slonoviny", "kod": "ci"}, "Senegal": {"jmeno": "Senegal", "kod": "sn"}, "Tunisia": {"jmeno": "Tunisko", "kod": "tn"}, "South Africa": {"jmeno": "Jihoafrická rep.", "kod": "za"},
-        "Australia": {"jmeno": "Austrálie", "kod": "au"}, "Iran": {"jmeno": "Írán", "kod": "ir"}, "Iraq": {"jmeno": "Irák", "kod": "iq"},
-        "Japan": {"jmeno": "Japonsko", "kod": "jp"}, "Jordan": {"jmeno": "Jordánsko", "kod": "jo"}, "Qatar": {"jmeno": "Katar", "kod": "qa"},
-        "Saudi Arabia": {"jmeno": "Saúdská Arábie", "kod": "sa"}, "South Korea": {"jmeno": "Jižní Korea", "kod": "kr"}, "Uzbekistan": {"jmeno": "Uzbekistán", "kod": "uz"},
-        "Curaçao": {"jmeno": "Curaçao", "kod": "cw"}, "Haiti": {"jmeno": "Haiti", "kod": "ht"}, "Panama": {"jmeno": "Panama", "kod": "pa"}, "New Zealand": {"jmeno": "Nový Zéland", "kod": "nz"},
-        
-        # --- MLS TÝMY PRO TESTOVÁNÍ ---
-        "Atlanta United FC": {"jmeno": "Atlanta Utd", "kod": "us"},
-        "Austin FC": {"jmeno": "Austin FC", "kod": "us"},
-        "Charlotte FC": {"jmeno": "Charlotte FC", "kod": "us"},
-        "Chicago Fire": {"jmeno": "Chicago Fire", "kod": "us"},
-        "Chicago Fire FC": {"jmeno": "Chicago Fire", "kod": "us"},
-        "FC Cincinnati": {"jmeno": "FC Cincinnati", "kod": "us"},
-        "Colorado Rapids": {"jmeno": "Colorado Rapids", "kod": "us"},
-        "Columbus Crew SC": {"jmeno": "Columbus Crew SC", "kod": "us"},
-        "FC Dallas": {"jmeno": "FC Dallas", "kod": "us"},
-        "D.C. United": {"jmeno": "D.C. United", "kod": "us"},
-        "Houston Dynamo": {"jmeno": "Houston Dynamo", "kod": "us"},
-        "Sporting Kansas City": {"jmeno": "Sporting KC", "kod": "us"},
-        "LA Galaxy": {"jmeno": "LA Galaxy", "kod": "us"},
-        "Los Angeles FC": {"jmeno": "Los Angeles FC", "kod": "us"},
-        "Inter Miami CF": {"jmeno": "Inter Miami", "kod": "us"},
-        "Minnesota United FC": {"jmeno": "Minnesota Utd", "kod": "us"},
-        "CF Montreal": {"jmeno": "CF Montreal", "kod": "ca"},
-        "Nashville SC": {"jmeno": "Nashville SC", "kod": "us"},
-        "New England Revolution": {"jmeno": "NE Revolution", "kod": "us"},
-        "New York City FC": {"jmeno": "New York City", "kod": "us"},
-        "New York Red Bulls": {"jmeno": "NY Red Bulls", "kod": "us"},
-        "Orlando City SC": {"jmeno": "Orlando City", "kod": "us"},
-        "Philadelphia Union": {"jmeno": "Philadelphia", "kod": "us"},
-        "Portland Timbers": {"jmeno": "Portland Timbers", "kod": "us"},
-        "Real Salt Lake": {"jmeno": "Real Salt Lake", "kod": "us"},
-        "San Diego FC": {"jmeno": "San Diego", "kod": "us"},
-        "San Jose Earthquakes": {"jmeno": "San Jose", "kod": "us"},
-        "Seattle Sounders FC": {"jmeno": "Seattle Sounders", "kod": "us"},
-        "St. Louis City SC": {"jmeno": "St. Louis City", "kod": "us"},
-        "Toronto FC": {"jmeno": "Toronto FC", "kod": "ca"},
-        "Vancouver Whitecaps FC": {"jmeno": "Vancouver", "kod": "ca"}   
-    }
-    
-    def dej_data_tymu(tym_z_api):
-        return PREKLAD_TYMU.get(tym_z_api, {"jmeno": tym_z_api, "kod": "un"})
-        
     aktualni_uzivatel = st.session_state["uzivatel"]
     aktualni_body = UZIVATELE[aktualni_uzivatel]["body"]
     
@@ -385,12 +381,7 @@ else:
     
     for i, (jm, dt) in enumerate(serazeni_hraci):
         znak = medaile[i] if i < len(medaile) else "🏅"
-        
-        if jm == aktualni_uzivatel:
-            styl_jmena = "font-weight: bold; color: #FFF200; font-size: 16px;"
-        else:
-            styl_jmena = "color: #FFFFFF; font-size: 16px;"
-            
+        styl_jmena = "font-weight: bold; color: #FFF200; font-size: 16px;" if jm == aktualni_uzivatel else "color: #FFFFFF; font-size: 16px;"
         text_statusu = f"<div style='color: #aaaaaa; font-style: italic; font-size: 13px; margin-top: 2px; padding-left: 22px;'>„{dt['status']}“</div>" if dt['status'] else ""
         
         html_radek = f"""
@@ -402,7 +393,7 @@ else:
         st.sidebar.markdown(html_radek, unsafe_allow_html=True)
 
     # ==========================================
-    # 🛠 POMOCNÁ FUNKCE PRO VYKRESLENÍ DETAILU ZÁPASU (S ODPOČTEM ČASU)
+    # 🛠 POMOCNÁ FUNKCE PRO DETAIL ZÁPASU
     # ==========================================
     def vykresli_detail_zapasu(z, zapas_uzamcen, moje_sazky):
         stavajici_tip = next((s for s in moje_sazky if str(s.get("ID_zapasu")) == str(z["ID"])), None)
@@ -445,8 +436,7 @@ else:
                         ⏳ Do uzamčení tipů zbývá: <span style='font-weight: bold; text-transform: uppercase;'>{cas_text}</span>
                     </div>
                     """
-            except:
-                pass
+            except: pass
         
         if je_zapas_ukoncen:
             titulek_radku = f"✅ {z.get('Datum', '')} | {t_domaci['jmeno']} vs {t_hoste['jmeno']}{skore_text} (ODEHRÁNO)"
@@ -462,13 +452,8 @@ else:
             
             img_domaci = f"<img src='https://flagcdn.com/w160/{t_domaci['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_domaci['kod'] != "un" else ""
             img_hoste = f"<img src='https://flagcdn.com/w160/{t_hoste['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_hoste['kod'] != "un" else ""
-            
-            if je_zapas_ukoncen and z.get('Vysledek'):
-                stred_text = str(z.get('Vysledek'))
-                stred_color = "#FFF200"
-            else:
-                stred_text = "VS"
-                stred_color = "#888888"
+            stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
+            stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
             
             html_vlajky = f"""
             <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
@@ -543,8 +528,8 @@ else:
                 max_body = round(k_1x2 + k_goly, 2)
                 if ma_1x2 or ma_goly:
                     uz_ma_zolika = stavajici_tip and str(stavajici_tip.get("Zolik", "Ne")).lower() == "ano"
-                    
                     chce_zolika = False
+                    
                     if zbyva_zoliku > 0 or uz_ma_zolika:
                         chce_zolika = st.checkbox("🃏 Aktivovat ŽOLÍKA (Dvojnásobné body v případě výhry!)", value=uz_ma_zolika, key=f"zol_{z['ID']}")
                     else:
@@ -555,6 +540,7 @@ else:
                         st.info(f"🃏 **ŽOLÍK AKTIVNÍ!** Potenciální zisk: **{max_body} bodů**.")
                     else:
                         st.info(f"💡 Potenciální zisk v případě úspěchu: **{max_body} bodů**.")
+                        
                     text_tlacitka = "🔄 AKTUALIZOVAT TIKET" if stavajici_tip else "💾 VSADIT TIKET"
                     
                     if st.button(text_tlacitka, key=f"btn_{z['ID']}", type="primary"):
@@ -589,7 +575,6 @@ else:
     # ==========================================
     with tab1:
         st.subheader("📅 Nabídka zápasů")
-        
         aktualni_cas = datetime.utcnow() + timedelta(hours=2)
         dnes_str = aktualni_cas.strftime("%d.%m.")
         
@@ -630,11 +615,10 @@ else:
             else: st.caption("Zatím nebyl odehrán ani vyhodnocen žádný zápas turnaje.")
 
     # ==========================================
-    # ZÁLOŽKA 2: MATCH CENTER / GRAF SÁZEK
+    # ZÁLOŽKA 2: MOJE TIPY A GRAF
     # ==========================================
     with tab2:
         st.subheader("📜 Moje tipy a graf")
-        st.write("Tady uvidíš své aktuální i vyhodnocené tipy spolu s grafem přírůstku bodů.")
         
         import pandas as pd
         vyhodnocene_zapasy = []
@@ -682,7 +666,6 @@ else:
             st.altair_chart(konecny_graf, use_container_width=True)
             st.markdown("<br>", unsafe_allow_html=True)
             
-        # --- VÝPIS TIKETŮ ---
         aktualni_cas = datetime.utcnow() + timedelta(hours=2)
         for z in data_zapasy:
             if str(z.get("Stav", "")).lower() in ["aktivni", "ukonceno"] and str(z.get("ID", "")).strip() != "":
@@ -715,13 +698,8 @@ else:
                         st.write("")
                         img_domaci = f"<img src='https://flagcdn.com/w160/{t_domaci['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_domaci['kod'] != "un" else ""
                         img_hoste = f"<img src='https://flagcdn.com/w160/{t_hoste['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_hoste['kod'] != "un" else ""
-                        
-                        if je_zapas_ukoncen and z.get('Vysledek'):
-                            stred_text = str(z.get('Vysledek'))
-                            stred_color = "#FFF200"
-                        else:
-                            stred_text = "VS"
-                            stred_color = "#888888"
+                        stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
+                        stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
                         
                         html_vlajky = f"""
                         <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
@@ -773,17 +751,20 @@ else:
                             else: st.caption("Nikdo jiný z hráčů na tento zápas nenasadil žádný tip.")                    
 
     # ==========================================
-    # ZÁLOŽKA 3: 📊 STATISTIKY (PRO TÁTU)
+    # ZÁLOŽKA 3: STATISTIKY
     # ==========================================
     with tab3:
         st.subheader("🏟️ Statistiky turnaje")
+
+        ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
+        celkem_odehrano_local = len(ukoncene_zapasy_local)
 
         goly_celkem = 0
         over_25 = 0
         under_25 = 0
         btts_celkem = 0
 
-        for zp in ukoncene_zapasy:
+        for zp in ukoncene_zapasy_local:
             try:
                 hg, ag = map(int, str(zp.get("Vysledek")).split(":"))
                 total_g = hg + ag
@@ -793,10 +774,10 @@ else:
                 if hg > 0 and ag > 0: btts_celkem += 1
             except: pass
 
-        avg_goly = round(goly_celkem / celkem_odehrano, 2) if celkem_odehrano > 0 else 0.0
-        p_over = round((over_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
-        p_under = round((under_25 / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
-        p_btts = round((btts_celkem / celkem_odehrano) * 100, 1) if celkem_odehrano > 0 else 0.0
+        avg_goly = round(goly_celkem / celkem_odehrano_local, 2) if celkem_odehrano_local > 0 else 0.0
+        p_over = round((over_25 / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
+        p_under = round((under_25 / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
+        p_btts = round((btts_celkem / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
 
         max_bodovych_restu = 0.0
         for zp in data_zapasy:
@@ -818,15 +799,14 @@ else:
         
         max_bodovych_restu = round(max_bodovych_restu, 2)
 
-        # --- SKOKAN DNE ---
         skokan_jmeno = None
         skokan_zisk = -999.0
         posledni_den_text = ""
         
-        if celkem_odehrano >= 1:
+        if celkem_odehrano_local >= 1:
             try:
                 dny_odehrano = []
-                for zp in ukoncene_zapasy:
+                for zp in ukoncene_zapasy_local:
                     if zp.get("Datum"):
                         jen_den = str(zp["Datum"]).split()[0]
                         dny_odehrano.append(jen_den)
@@ -840,21 +820,17 @@ else:
                     vsichni_hraci_list = list(UZIVATELE.keys())
                     for hr in vsichni_hraci_list:
                         body_za_den = 0.0
-                        
                         for s in vsechny_sazky:
                             if str(s.get("Uzivatel")) == hr and str(s.get("Stav_Tipu", "")).lower() == "vyhodnoceno":
                                 z_id = str(s.get("ID_zapasu"))
                                 info_z_sazky = next((zp for zp in data_zapasy if str(zp.get("ID")) == z_id), None)
-                                
                                 if info_z_sazky and info_z_sazky.get("Datum", "").startswith(posledni_den_text):
                                     body_za_den += float(s.get("Body_Ziskane", 0))
-                        
                         if body_za_den > skokan_zisk:
                             skokan_zisk = body_za_den
                             skokan_jmeno = hr
             except: pass
 
-        # --- KOLEKTIVNÍ ROZUM ---
         shodne_tipy_celkem = 0
         shodne_tipy_vyhry = 0
         vsichni_hraci_list = list(UZIVATELE.keys())
@@ -863,32 +839,28 @@ else:
 
         for z_id in vyhodnocene_zapasy_ids:
             sazky_kolektivu = [s for s in vsechny_sazky if str(s.get("ID_zapasu")) == z_id and str(s.get("Stav_Tipu", "")).lower() == "vyhodnoceno"]
-            
             if len(sazky_kolektivu) == len(vsichni_hraci_list):
                 tipy_1x2 = [s.get("Tip_1X2") for s in sazky_kolektivu]
                 if len(set(tipy_1x2)) == 1 and tipy_1x2[0] != "Nenasazeno":
                     shodne_tipy_celkem += 1
-                    if str(sazky_kolektivu[0].get("Stav_1X2")).lower() == "vyhra":
-                        shodne_tipy_vyhry += 1
+                    if str(sazky_kolektivu[0].get("Stav_1X2")).lower() == "vyhra": shodne_tipy_vyhry += 1
                 
                 tipy_goly = [s.get("Tip_Goly") for s in sazky_kolektivu]
                 if len(set(tipy_goly)) == 1 and tipy_goly[0] != "Nenasazeno":
                     shodne_tipy_celkem += 1
-                    if str(sazky_kolektivu[0].get("Stav_Goly")).lower() == "vyhra":
-                        shodne_tipy_vyhry += 1
+                    if str(sazky_kolektivu[0].get("Stav_Goly")).lower() == "vyhra": shodne_tipy_vyhry += 1
 
         kolektivni_uspech_pct = round((shodne_tipy_vyhry / shodne_tipy_celkem) * 100, 1) if shodne_tipy_celkem > 0 else 0.0
 
-        if celkem_odehrano == 0 and max_bodovych_restu == 0:
+        if celkem_odehrano_local == 0 and max_bodovych_restu == 0:
             st.info("ℹ️ Turnajové statistiky budou dostupné, jakmile se do systému nahrají zápasy.")
         else:
             c1, c2, c3 = st.columns(3)
-            with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano} ⚽")
+            with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano_local} ⚽")
             with c2: st.metric("Gólový průměr", f"{avg_goly} 🔥")
             with c3: st.metric("Zápasy, kdy skórovaly oba", f"{p_btts} %")
 
             col_box1, col_box2 = st.columns(2)
-            
             with col_box1:
                 if skokan_jmeno and skokan_zisk > 0:
                     st.markdown(f"""
@@ -1006,8 +978,7 @@ else:
                 if outcome:
                     current_streak += 1
                     if current_streak > max_streak: max_streak = current_streak
-                else:
-                    current_streak = 0
+                else: current_streak = 0
             
             zapas_kratky = dt["max_k_zapas"].split("-")[0][:12] if dt["max_k"] > 0 else "-"
             zivotni_trefa = f"{dt['max_k']} ({zapas_kratky})" if dt["max_k"] > 0 else "-"
@@ -1016,13 +987,11 @@ else:
             bg_color = "#1c1c13" if h == aktualni_uzivatel else "#1a1a1a"
 
             html_karta = f"""<div style='background-color: {bg_color}; padding: 18px; border-radius: 8px; {border_style} text-align: center;'><h2 style='margin: 0 0 5px 0; color: #FFF200; font-size: 22px;'>{h}</h2><div style='font-size: 28px; font-weight: bold; color: #fff; margin-bottom: 15px;'>{acc_celkova} % <span style='font-size:12px; color:#aaa; font-weight:normal;'>úspěšnost</span></div><div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'><span style='color:#aaa;'>Přesnost 1X2:</span><span style='font-weight:bold; color:#a2ffaf;'>{acc_1x2} %</span></div><div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'><span style='color:#aaa;'>Přesnost Gólů:</span><span style='font-weight:bold; color:#a2ffaf;'>{acc_goly} %</span></div><div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'><span style='color:#aaa;'>Optimismus:</span><span style='font-weight:bold; color:#ffb77c;'>{p_over_sazek} % OVER</span></div><div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'><span style='color:#aaa;'>Životní trefa:</span><span style='font-weight:bold; color:#FFF200;'>{zivotni_trefa}</span></div><div style='display:flex; justify-content:space-between; font-size:13px;'><span style='color:#aaa;'>Max. šňůra výher:</span><span style='font-weight:bold; color:#5cd6ff;'>🟢 {max_streak} v řadě</span></div></div>"""
-            
-            with cols_karty[idx]:
-                st.markdown(html_karta, unsafe_allow_html=True)
+            with cols_karty[idx]: st.markdown(html_karta, unsafe_allow_html=True)
 
 
     # ==========================================
-    # ZÁLOŽKA 4: ⚙️ ADMINISTRACE
+    # ZÁLOŽKA 4: ADMINISTRACE
     # ==========================================
     with tab4:
         ADMIN_JMENO = "Rader"
@@ -1057,7 +1026,6 @@ else:
                     for zapas in data_api:
                         domaci, hoste = zapas["home_team"], zapas["away_team"]
                         klic_zapasu = f"{domaci} vs {hoste}"
-                        
                         cas_api_str = zapas.get("commence_time", "")
                         datum_formatovane = ""
                         if cas_api_str:
@@ -1110,14 +1078,11 @@ else:
                             k.get("Vysledek",""), k.get("Stav","aktivni")
                         ])
 
-                    sheet_z = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
                     sheet_z.clear()
                     sheet_z.append_rows([hlavicka_zapasy] + finalni_radky)
                     st.cache_data.clear(); st.success("✅ Kurzová nabídka byla bezpečně aktualizována!"); st.rerun()
 
             st.markdown("---")
-
-            # --- VYHODNOCENÍ ZÁPASŮ (ADMIN) ---
             st.markdown("### 🏆 Vyhodnocení zápasů")
             
             if st.button("🏆 Vyhodnotit výsledky zápasů a rozdat body", type="secondary"):
@@ -1199,8 +1164,7 @@ else:
                                         v_g = "vyhra"
                                         body_zisk += float(s["Kurz_Goly"])
                                         
-                                    if str(s.get("Zolik", "Ne")).lower() == "ano":
-                                        body_zisk = body_zisk * 2    
+                                    if str(s.get("Zolik", "Ne")).lower() == "ano": body_zisk = body_zisk * 2    
                                         
                                     sazky_list[i]["Stav_1X2"] = v_1x2
                                     sazky_list[i]["Stav_Goly"] = v_g
