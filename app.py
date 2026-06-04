@@ -601,6 +601,11 @@ else:
     # ==========================================
     with tab3:
         st.subheader("🏟️ Statistiky turnaje")
+
+        # 🔥 KLÍČOVÝ FIX: Nejdřív bezpečně vytvoříme seznam odehraných zápasů
+        ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
+        
+        # Teď už st.metric proměnnou bezpečně najde a nespadne
         st.metric("Odehrané zápasy", f"{len(ukoncene_zapasy_local)} ⚽")
         st.info("ℹ️ Statistiky turnajové DNA se automaticky rozjedou po nasazení a vyhodnocení prvních zápasů v novém formátu.")
 
