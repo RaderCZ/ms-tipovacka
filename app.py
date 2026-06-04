@@ -428,7 +428,7 @@ else:
                     c_g1, c_g2 = st.columns(2)
                     with c_g1: tip_goly_home = st.number_input(f"{t_domaci['jmeno']}", min_value=0, max_value=20, value=stare_home, step=1, key=f"gh_{z['ID']}")
                     with c_g2: tip_goly_away = st.number_input(f"{t_hoste['jmeno']}", min_value=0, max_value=20, value=stare_away, step=1, key=f"ga_{z['ID']}")
-                    st.caption("💡 Skóre se boduje jen tehdy, pokud trefíš Hlavní sázku.")
+                    st.caption("💡 Skóre je nezávislý tip, může posloužit třeba jako taktická pojistka.")
                 
                 uz_ma_zolika = stavajici_tip and str(stavajici_tip.get("Zolik", "Ne")).lower() == "ano"
                 chce_zolika = False
