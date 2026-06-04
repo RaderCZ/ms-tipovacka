@@ -469,19 +469,20 @@ else:
     with tab1:
         st.subheader("📅 Nabídka zápasů")
         
-        # 🟢 NOVINKA: Přehledná tabulka bodování přímo na očích
-        st.markdown("""
-        | 📊 Sázková příležitost | 🎯 Co musíš trefit | 🏆 Body |
-        | :--- | :--- | :---: |
-        | **Výhra domácích / hostů (1 / 2)** | Přesný výsledek (v play-off postup) | **2 b.** |
-        | **Čistá remíza (X)** | Zápas skončí nerozhodně (jen ve skupině) | **3 b.** |
-        | **Dvojšance / neprohra (10 / 02)** | Pojistka na neprohru (jen ve skupině) | **1 b.** |
-        | **Přesné skóre (Bonus)** | Úplně přesný výsledek (např. 2:1) | **4 b.** |
-        | **Rozdíl skóre (Bonus)** | Správný gólový rozdíl (např. tip 3:1, stav 2:0) | **2 b.** |
-        | **Ostatní remízy (Bonus)** | Trefená remíza, ale jiné skóre (např. tip 1:1, stav 2:2) | **2 b.** |
-        
-        *💡 **Poznámka:** Tip na přesné skóre se počítá samostatně a nezávisle na hlavní sázce! Žolík 🃏 ti celý zisk ze zápasu zdvojnásobí (Maximum je **7 bodů**, se žolíkem **14 bodů**).*
-        """)
+        # 🟢 OPRAVENO: Tabulka bodování elegantně schovaná do roletkového expanderu
+        with st.expander("📊 ZOBRAZIT BODOVACÍ SYSTÉM A PRAVIDLA"):
+            st.markdown("""
+            | ⚽ Sázková příležitost | 🎯 Co musíš trefit | 🏆 Body |
+            | :--- | :--- | :---: |
+            | **Výhra domácích / hostů (1 / 2)** | Přesný výsledek (v play-off postup) | **2 b.** |
+            | **Čistá remíza (X)** | Zápas skončí nerozhodně (jen ve skupině) | **3 b.** |
+            | **Dvojšance / neprohra (10 / 02)** | Pojistka na neprohru (jen ve skupině) | **1 b.** |
+            | **Přesné skóre (Bonus)** | Úplně přesný výsledek (např. 2:1) | **4 b.** |
+            | **Rozdíl skóre (Bonus)** | Správný gólový rozdíl (např. tip 3:1, stav 2:0) | **2 b.** |
+            | **Ostatní remízy (Bonus)** | Trefená remíza, ale jiné skóre (např. tip 1:1, stav 2:2) | **2 b.** |
+            
+            *💡 **Poznámka:** Tip na přesné skóre se počítá samostatně a nezávisle na hlavní sázce! Žolík 🃏 ti celý zisk ze zápasu zdvojnásobí (Maximum je **7 bodů**, se žolíkem **14 bodů**).*
+            """)
         
         st.markdown("---") # Oddělovací linka před samotnými zápasy
         
