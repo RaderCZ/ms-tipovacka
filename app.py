@@ -469,21 +469,58 @@ else:
     with tab1:
         st.subheader("📅 Nabídka zápasů")
         
-        # 🟢 OPRAVENO: Tabulka bodování elegantně schovaná do roletkového expanderu
+        # 🟢 OPRAVENO: Tabulka s vynucenou šířkou 100% pro dokonalé dotečení ke krajům
         with st.expander("📊 ZOBRAZIT BODOVACÍ SYSTÉM A PRAVIDLA"):
             st.markdown("""
-            | ⚽ Sázková příležitost | 🎯 Co musíš trefit | 🏆 Body |
-            | :--- | :--- | :---: |
-            | **Výhra domácích / hostů** | Přesný výsledek (v play-off postup) | **2 b.** |
-            | **Čistá remíza (X)** | Zápas skončí nerozhodně (jen ve skupině) | **3 b.** |
-            | **Neprohra 10 / 02** | Pojistka na neprohru (jen ve skupině) | **1 b.** |
-            | **Přesné skóre** | Úplně přesný výsledek (např. 2:1) | **4 b.** |
-            | **Rozdíl skóre** | Správný gólový rozdíl (např. tip 3:1, stav 2:0) | **2 b.** |
-            | **Ostatní remízy** | Jiné skóre remízy (např. tip 1:1, stav 2:2) | **2 b.** |
+            <div style="width: 100%; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse; color: #FFFFFF; font-family: 'Roboto', sans-serif; font-size: 14px;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #2D2D2D; text-align: left;">
+                            <th style="padding: 10px; font-weight: bold; color: #FFF200;">⚽ Sázková příležitost</th>
+                            <th style="padding: 10px; font-weight: bold; color: #FFF200;">🎯 Co musíš trefit</th>
+                            <th style="padding: 10px; text-align: center; font-weight: bold; color: #FFF200;">🏆 Body</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="border-bottom: 1px solid #252525;">
+                            <td style="padding: 10px; font-weight: bold;">Výhra domácích / hostů</td>
+                            <td style="padding: 10px;">Přesný výsledek (v play-off postup)</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold;">2 b.</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #252525;">
+                            <td style="padding: 10px; font-weight: bold;">Čistá remíza (X)</td>
+                            <td style="padding: 10px;">Zápas skončí nerozhodně (jen ve skupině)</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold;">3 b.</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #252525;">
+                            <td style="padding: 10px; font-weight: bold;">Neprohra 10 / 02</td>
+                            <td style="padding: 10px;">Pojistka na neprohru (jen ve skupině)</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold;">1 b.</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #252525;">
+                            <td style="padding: 10px; font-weight: bold;">Přesné skóre</td>
+                            <td style="padding: 10px;">Úplně přesný výsledek (např. 2:1)</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold;">4 b.</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #252525;">
+                            <td style="padding: 10px; font-weight: bold;">Rozdíl skóre</td>
+                            <td style="padding: 10px;">Správný gólový rozdíl (např. tip 3:1, stav 2:0)</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold;">2 b.</td>
+                        </tr>
+                        <tr style="border-bottom: 1px solid #2D2D2D;">
+                            <td style="padding: 10px; font-weight: bold;">Ostatní remízy</td>
+                            <td style="padding: 10px;">Jiné skóre remízy (např. tip 1:1, stav 2:2)</td>
+                            <td style="padding: 10px; text-align: center; font-weight: bold;">2 b.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <br>
+            <p style="margin: 0; font-size: 13.5px; color: #FFFFFF;">
+                💡 <b>Poznámka:</b> Tip na přesné skóre se počítá samostatně a nezávisle na hlavní sázce! Žolík 🃏 ti celý zisk ze zápasu zdvojnásobí <i>(Maximum je <b>7 bodů</b>, se žolíkem <b>14 bodů</b>)</i>.
+            </p>
+            """, unsafe_allow_html=True)
             
-            *💡 **Poznámka:** Tip na přesné skóre se počítá samostatně a nezávisle na hlavní sázce! Žolík 🃏 ti celý zisk ze zápasu zdvojnásobí (Maximum je **7 bodů**, se žolíkem **14 bodů**).*
-            """)
-        
         st.markdown("---") # Oddělovací linka před samotnými zápasy
         
         aktualni_cas = datetime.utcnow() + timedelta(hours=2)
