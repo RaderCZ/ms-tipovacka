@@ -391,7 +391,7 @@ else:
                 <div style='flex: 0.5; text-align: center;'><h2 style='color: {stred_color}; margin: 0; letter-spacing: 0px;'>{stred_text}</h2>{kx_text}</div>
                 <div style='flex: 1; text-align: center;'>{img_hoste}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div>{k2_text}</div>
             </div>
-            """, unsafe_allow_html=True))
+            """, unsafe_allow_html=True)
             st.markdown("---")
             
             if vnitrni_odpocet_html: st.markdown(vnitrni_odpocet_html, unsafe_allow_html=True)
