@@ -380,31 +380,30 @@ else:
             stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
             stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
             
-            # --- 🟢 GEOMETRICKY VYCENTROVANÉ KURZY (ÚPRAVA UVOZIOVEK PROTI POJEBÁNÍ) ---
-            k1_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_1', '')})</div>" if str(z.get('Kurz_1', '')).strip() else ""
-            k2_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_2', '')})</div>" if str(z.get('Kurz_2', '')).strip() else ""
-            kx_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_X', '')})</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
+            # Textové řetězce pro kurzy v závorkách
+            k1_text = f"<div style='font-size: 13px; color: #888888; margin-top: 5px;'>({z.get('Kurz_1', '')})</div>" if str(z.get('Kurz_1', '')).strip() else ""
+            k2_text = f"<div style='font-size: 13px; color: #888888; margin-top: 5px;'>({z.get('Kurz_2', '')})</div>" if str(z.get('Kurz_2', '')).strip() else ""
+            kx_text = f"<div style='font-size: 13px; color: #888888; margin-top: -10px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_X', '')})</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
 
-            st.markdown(f'''
-            <div style='display: flex; justify-content: space-between; align-items: stretch; width: 100%; margin-top: 10px;'>
-                <div style='flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: space-between;'>
-                    <div>{img_domaci}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div></div>
+            # Návrat k původní, stabilní HTML tabulce
+            st.markdown(f"""
+            <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
+                <div style='flex: 1; text-align: center;'>
+                    {img_domaci}
+                    <div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div>
                     {k1_text}
                 </div>
-                
-                <div style='flex: 0.6; text-align: center; display: flex; flex-direction: column; justify-content: space-between; min-height: 100%;'>
-                    <div style='display: flex; align-items: center; justify-content: center; flex-grow: 1; min-height: 45px;'>
-                        <h2 style="color: {stred_color}; margin: 0; padding: 0; font-family: 'Staatliches', sans-serif; font-size: 36px; font-weight: bold; letter-spacing: 0px; text-align: center;">{stred_text}</h2>
-                    </div>
+                <div style='flex: 0.5; text-align: center;'>
+                    <h2 style='color: {stred_color}; margin: 0; padding: 0; font-family: "Staatliches", sans-serif; font-size: 36px; font-weight: bold; letter-spacing: 1px; text-align: center;'>{stred_text}</h2>
                     {kx_text}
                 </div>
-                
-                <div style='flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: space-between;'>
-                    <div>{img_hoste}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div></div>
+                <div style='flex: 1; text-align: center;'>
+                    {img_hoste}
+                    <div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div>
                     {k2_text}
                 </div>
             </div>
-            ''', unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
             st.markdown("---")
             
             if vnitrni_odpocet_html: st.markdown(vnitrni_odpocet_html, unsafe_allow_html=True)
@@ -419,7 +418,6 @@ else:
             else:
                 if stavajici_tip: st.warning("⚠️ Na tento zápas už máš vsazeno. Níže můžeš svůj tip kdykoliv upravit.")
                 
-                # --- SÁZKOVÝ FORMULÁŘ: DVOJŠANCE VS PLAY-OFF ---
                 moznat_hlavni = ["1", "2"] if je_playoff else ["1", "10", "X", "02", "2"]
                 format_hlavni_dict = {
                     "1": f"1 (Výhra {t_domaci['jmeno']})",
@@ -431,7 +429,6 @@ else:
                 
                 idx_hlavni = moznat_hlavni.index(str(stavajici_tip["Tip_Hlavni"])) if stavajici_tip and str(stavajici_tip["Tip_Hlavni"]) in moznat_hlavni else 0
                 
-                # Načtení stávajícího skóre pro formulář
                 stare_home, stare_away = 0, 0
                 if stavajici_tip and ":" in str(stavajici_tip.get("Tip_Skore", "")):
                     try: stare_home, stare_away = map(int, str(stavajici_tip["Tip_Skore"]).split(":"))
