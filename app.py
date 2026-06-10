@@ -380,15 +380,18 @@ else:
             stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
             stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
             
-            # --- 🟢 MINIMALISTICKÉ ŠEDÉ KURZY V ZÁVORKÁCH (DOKONALÉ VYCENTROVÁNÍ) ---
-            k1_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400;'>({z.get('Kurz_1', '')})</div>" if str(z.get('Kurz_1', '')).strip() else ""
-            k2_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400;'>({z.get('Kurz_2', '')})</div>" if str(z.get('Kurz_2', '')).strip() else ""
-            kx_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400;'>({z.get('Kurz_X', '')})</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
+            # --- 🟢 MINIMALISTICKÉ ŠEDÉ KURZY (STOPROCENTNÍ VYCENTROVÁNÍ POD VS) ---
+            k1_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400; text-align: center;'>({z.get('Kurz_1', '')})</div>" if str(z.get('Kurz_1', '')).strip() else ""
+            k2_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400; text-align: center;'>({z.get('Kurz_2', '')})</div>" if str(z.get('Kurz_2', '')).strip() else ""
+            kx_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_X', '')})</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
 
             st.markdown(f"""
             <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
                 <div style='flex: 1; text-align: center;'>{img_domaci}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div>{k1_text}</div>
-                <div style='flex: 0.5; text-align: center;'><h2 style='color: {stred_color}; margin: 0; letter-spacing: 0px;'>{stred_text}</h2>{kx_text}</div>
+                <div style='flex: 0.5; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center;'>
+                    <h2 style='color: {stred_color}; margin: 0; letter-spacing: 0px; text-align: center;'>{stred_text}</h2>
+                    {kx_text}
+                </div>
                 <div style='flex: 1; text-align: center;'>{img_hoste}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div>{k2_text}</div>
             </div>
             """, unsafe_allow_html=True)
