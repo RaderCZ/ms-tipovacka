@@ -870,7 +870,7 @@ else:
                     for k in vsechny_zapasy_obj:
                         finalni_radky.append([
                             k.get("ID"), k.get("Domaci"), k.get("Hoste"), k.get("Datum"), k.get("Kurz_1"), k.get("Kurz_X"), k.get("Kurz_2"),
-                            "","","","","","","","","","","","","", k.get("Vysledek",""), k.get("Stav","aktivni")
+                            "","","","","","","","","","","","", k.get("Vysledek",""), k.get("Stav","aktivni")
                         ])
 
                     sheet_z.clear()
