@@ -380,12 +380,12 @@ else:
             stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
             stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
             
-            # --- 🟢 GEOMETRICKY VYCENTROVANÉ KURZY V JEDNÉ HORIZONTÁLNÍ LINII (BEZ HTML KOMENTÁŘŮ) ---
+            # --- 🟢 GEOMETRICKY VYCENTROVANÉ KURZY (ÚPRAVA UVOZIOVEK PROTI POJEBÁNÍ) ---
             k1_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_1', '')})</div>" if str(z.get('Kurz_1', '')).strip() else ""
             k2_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_2', '')})</div>" if str(z.get('Kurz_2', '')).strip() else ""
             kx_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_X', '')})</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
 
-            st.markdown(f"""
+            st.markdown(f'''
             <div style='display: flex; justify-content: space-between; align-items: stretch; width: 100%; margin-top: 10px;'>
                 <div style='flex: 1; text-align: center; display: flex; flex-direction: column; justify-content: space-between;'>
                     <div>{img_domaci}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div></div>
@@ -394,7 +394,7 @@ else:
                 
                 <div style='flex: 0.6; text-align: center; display: flex; flex-direction: column; justify-content: space-between; min-height: 100%;'>
                     <div style='display: flex; align-items: center; justify-content: center; flex-grow: 1; min-height: 45px;'>
-                        <h2 style='color: {stred_color}; margin: 0; padding: 0; font-family: "Staatliches", sans-serif; font-size: 36px; font-weight: bold; letter-spacing: 0px; text-align: center;'>{stred_text}</h2>
+                        <h2 style="color: {stred_color}; margin: 0; padding: 0; font-family: 'Staatliches', sans-serif; font-size: 36px; font-weight: bold; letter-spacing: 0px; text-align: center;">{stred_text}</h2>
                     </div>
                     {kx_text}
                 </div>
@@ -404,7 +404,7 @@ else:
                     {k2_text}
                 </div>
             </div>
-            """, unsafe_allow_html=True)
+            ''', unsafe_allow_html=True)
             st.markdown("---")
             
             if vnitrni_odpocet_html: st.markdown(vnitrni_odpocet_html, unsafe_allow_html=True)
