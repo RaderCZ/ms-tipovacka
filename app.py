@@ -380,10 +380,10 @@ else:
             stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
             stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
             
-            # --- 🟢 BEZPEČNÉ DOPLNĚNÍ KURZŮ Z GOOGLE TABULKY ---
-            k1_text = f"<div style='font-size: 13px; color: #FFF200; margin-top: 3px; font-weight: 500;'>Kurz: {z.get('Kurz_1', '')}</div>" if str(z.get('Kurz_1', '')).strip() else ""
-            k2_text = f"<div style='font-size: 13px; color: #FFF200; margin-top: 3px; font-weight: 500;'>Kurz: {z.get('Kurz_2', '')}</div>" if str(z.get('Kurz_2', '')).strip() else ""
-            kx_text = f"<div style='font-size: 12px; color: #888888; margin-top: 2px;'>X: {z.get('Kurz_X', '')}</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
+            # --- 🟢 MINIMALISTICKÉ ŠEDÉ KURZY V ZÁVORKÁCH (DOKONALÉ VYCENTROVÁNÍ) ---
+            k1_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400;'>({z.get('Kurz_1', '')})</div>" if str(z.get('Kurz_1', '')).strip() else ""
+            k2_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400;'>({z.get('Kurz_2', '')})</div>" if str(z.get('Kurz_2', '')).strip() else ""
+            kx_text = f"<div style='font-size: 13px; color: #888888; margin-top: 3px; font-weight: 400;'>({z.get('Kurz_X', '')})</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
 
             st.markdown(f"""
             <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
@@ -391,7 +391,7 @@ else:
                 <div style='flex: 0.5; text-align: center;'><h2 style='color: {stred_color}; margin: 0; letter-spacing: 0px;'>{stred_text}</h2>{kx_text}</div>
                 <div style='flex: 1; text-align: center;'>{img_hoste}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div>{k2_text}</div>
             </div>
-            """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True))
             st.markdown("---")
             
             if vnitrni_odpocet_html: st.markdown(vnitrni_odpocet_html, unsafe_allow_html=True)
