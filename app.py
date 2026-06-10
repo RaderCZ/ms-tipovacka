@@ -460,7 +460,7 @@ else:
                     st.success("Tiket byl podán!")
                     st.rerun()
 
-    tabs = st.tabs(["📅 Kurzová nabídka", "📜 Moje tipy", "📊 Statistiky", "⚙️ Admin"])
+    tabs = st.tabs(["📅 Nabídka zápasů", "📜 Moje tipy", "📊 Statistiky", "⚙️ Admin"])
     tab1, tab2, tab3, tab4 = tabs[0], tabs[1], tabs[2], tabs[3]
 
     # ==========================================
@@ -470,7 +470,7 @@ else:
         st.subheader("📅 Nabídka zápasů")
         
         # 🟢 OPRAVENO: Tabulka s vynucenou šířkou 100% pro dokonalé dotečení ke krajům
-        with st.expander("📊 ZOBRAZIT BODOVACÍ SYSTÉM A PRAVIDLA"):
+        with st.expander("📊 BODOVACÍ SYSTÉM A PRAVIDLA"):
             st.markdown("""
             <div style="width: 100%; overflow-x: auto;">
                 <table style="width: 100%; border-collapse: collapse; color: #FFFFFF; font-family: 'Roboto', sans-serif; font-size: 14px;">
@@ -661,7 +661,7 @@ else:
         celkem_odehrano_local = len(ukoncene_zapasy_local)
 
         if celkem_odehrano_local == 0:
-            st.info("ℹ️ Turnajové statistiky a DNA sázkařů se plně propočítají, jakmile v systému vyhodnotíte první odehrané zápasy!")
+            st.info("ℹ️ Turnajové statistiky a DNA hráčů se plně propočítají, jakmile se odehrají první zápasy!")
         else:
             goly_celkem = 0
             remizy_skutecne = 0
@@ -710,7 +710,7 @@ else:
             st.info(nejvyssi_vyhra_text)
 
         st.markdown("---")
-        st.markdown("### 🧬 Profilování sázkařské DNA")
+        st.markdown("### 🧬 Sázkařské DNA")
 
         stats_hraci = {}
         for h in UZIVATELE.keys():
