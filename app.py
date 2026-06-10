@@ -380,7 +380,7 @@ else:
             stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
             stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
             
-            # --- 🟢 GEOMETRICKY SEŘAZENÉ KURZY DO JEDNÉ HORIZONTÁLNÍ LINKY ---
+            # --- 🟢 GEOMETRICKY VYCENTROVANÉ A FONTOVĚ SJEDNOCENÉ KURZY ---
             k1_html = f"({z.get('Kurz_1', '')})" if str(z.get('Kurz_1', '')).strip() else ""
             k2_html = f"({z.get('Kurz_2', '')})" if str(z.get('Kurz_2', '')).strip() else ""
             kx_html = f"({z.get('Kurz_X', '')})" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
@@ -391,7 +391,7 @@ else:
                     {img_domaci}
                     <div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div>
                 </div>
-                <div style='flex: 0.5; text-align: center;'>
+                <div style='flex: 1; text-align: center;'>
                     <h2 style='color: {stred_color}; margin: 0; padding: 0; font-family: "Staatliches", sans-serif; font-size: 36px; font-weight: bold; letter-spacing: 1px; text-align: center;'>{stred_text}</h2>
                 </div>
                 <div style='flex: 1; text-align: center;'>
@@ -400,9 +400,9 @@ else:
                 </div>
             </div>
             
-            <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 12px; font-size: 13px; color: #888888; font-weight: 400;'>
+            <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px; font-size: 13px; color: #888888; font-weight: 400;'>
                 <div style='flex: 1; text-align: center;'>{k1_html}</div>
-                <div style='flex: 0.5; text-align: center; font-weight: bold;'>{kx_html}</div>
+                <div style='flex: 1; text-align: center;'>{kx_html}</div>
                 <div style='flex: 1; text-align: center;'>{k2_html}</div>
             </div>
             """, unsafe_allow_html=True)
