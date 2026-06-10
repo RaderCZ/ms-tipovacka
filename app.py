@@ -652,17 +652,155 @@ else:
                         else: st.warning("⚠️ Tento zápas jsi netipoval.")
 
     # ==========================================
-    # ZÁLOŽKA 3: STATISTIKY
+    # ZÁLOŽKA 3: STATISTIKY (KOMPLETNÍ PŘEPIS PODLE PRAVIDEL 4-2-2)
     # ==========================================
     with tab3:
         st.subheader("🏟️ Statistiky turnaje")
 
-        # 🔥 KLÍČOVÝ FIX: Nejdřív bezpečně vytvoříme seznam odehraných zápasů
         ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
-        
-        # Teď už st.metric proměnnou bezpečně najde a nespadne
-        st.metric("Odehrané zápasy", f"{len(ukoncene_zapasy_local)} ⚽")
-        st.info("ℹ️ Statistiky turnajové DNA se automaticky rozjedou po nasazení a vyhodnocení prvních zápasů v novém formátu.")
+        celkem_odehrano_local = len(ukoncene_zapasy_local)
+
+        if celkem_odehrano_local == 0:
+            st.info("ℹ️ Turnajové statistiky a DNA sázkařů se plně propočítají, jakmile v systému vyhodnotíte první odehrané zápasy!")
+        else:
+            goly_celkem = 0
+            remizy_skutecne = 0
+            over_25_celkem = 0
+            
+            nejvyssi_rozdil = -1
+            nejvyssi_vyhra_text = "Zatím žádný zápas"
+
+            for zp in ukoncene_zapasy_local:
+                try:
+                    hg, ag = map(int, str(zp.get("Vysledek")).split(":"))
+                    total_g = hg + ag
+                    goly_celkem += total_g
+                    
+                    if hg == ag: 
+                        remizy_skutecne += 1
+                    if total_g > 2.5: 
+                        over_25_celkem += 1
+                    
+                    # Výpočet nejvyšší výhry podle rozdílu
+                    rozdil = abs(hg - ag)
+                    if rozdil > nejvyssi_rozdil:
+                        nejvyssi_rozdil = rozdil
+                        t_dom = dej_data_tymu(zp['Domaci'])['jmeno']
+                        t_hos = dej_data_tymu(zp['Hoste'])['jmeno']
+                        nejvyssi_vyhra_text = f"**{t_dom} vs. {t_hos} {hg}:{ag}** (rozdíl +{rozdil} gólů)"
+                except: pass
+
+            avg_goly = round(goly_celkem / celkem_odehrano_local, 2)
+            p_remiz = round((remizy_skutecne / celkem_odehrano_local) * 100, 1)
+            p_over = round((over_25_celkem / celkem_odehrano_local) * 100, 1)
+
+            # 1. Řada dlaždic
+            c1, c2, c3 = st.columns(3)
+            with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano_local} ⚽")
+            with c2: st.metric("Gólový průměr", f"{avg_goly} 🔥")
+            with c3: st.metric("Zápasy s plichtou", f"{p_remiz} % 🤝")
+
+            # 2. Progress bar pro Over/Under 2.5
+            st.write("")
+            st.markdown(f"**📊 Poměr zápasů Over / Under 2.5 gólů:**")
+            st.progress(p_over / 100.0)
+            col_b1, col_b2 = st.columns(2)
+            with col_b1: st.caption(f"Under 2.5 gólů ({round(100.0 - p_over, 1)} %)")
+            with col_b2: st.markdown(f"<div style='text-align: right; font-size: 14px; color: #FFF200; font-weight: bold;'>Over 2.5 gólů ({p_over} %)</div>", unsafe_allow_html=True)
+
+            # 3. Nejvyšší výhra
+            st.write("")
+            st.markdown(f"🏆 **Nejvyšší výhra turnaje:**")
+            st.info(nejvyssi_vyhra_text)
+
+        st.markdown("---")
+        st.markdown("### 🧬 Profilování sázkařské DNA")
+
+        stats_hraci = {}
+        for h in UZIVATELE.keys():
+            stats_hraci[h] = {
+                "celkem_vyhodnoceno": 0,
+                "hlavni_trefy": 0,
+                "presny_zasah": 0,
+                "rozdil_zasah": 0,
+                "ostatni_remizy": 0,
+                "pouzite_dvojšance": 0
+            }
+
+        # Sběr základních počítadel
+        for s in vsechny_sazky:
+            h = s.get("Uzivatel")
+            if h not in stats_hraci: continue
+            if str(s.get("Stav_Tipu")).lower() != "vyhodnoceno": continue
+
+            stats_hraci[h]["celkem_vyhodnoceno"] += 1
+            
+            if str(s.get("Stav_Hlavni")).lower() == "vyhra":
+                stats_hraci[h]["hlavni_trefy"] += 1
+
+            t_hl = str(s.get("Tip_Hlavni", ""))
+            if t_hl in ["10", "02"]: 
+                stats_hraci[h]["pouzite_dvojšance"] += 1
+
+            st_sk = str(s.get("Stav_Skore", "")).lower()
+            if st_sk == "presne": stats_hraci[h]["presny_zasah"] += 1
+            elif st_sk == "rozdil": stats_hraci[h]["rozdil_zasah"] += 1
+            elif st_sk == "remiza_ostatni": stats_hraci[h]["ostatni_remizy"] += 1
+
+        cols_karty = st.columns(3)
+        jmena_hracu = list(stats_hraci.keys())
+
+        for idx, h in enumerate(jmena_hracu):
+            if idx >= len(cols_karty): break
+            dt = stats_hraci[h]
+            
+            # --- 🕵️‍♂️ VÝPOČET NEJDELŠÍ VÍTĚZNÉ ŠŇŮRY CHRONOLOGICKY ---
+            uziv_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel")) == h and str(s.get("Stav_Tipu")).lower() == "vyhodnoceno"]
+            try:
+                uziv_sazky = sorted(uziv_sazky, key=lambda x: int(x["ID_zapasu"]))
+            except: pass
+            
+            max_snura = 0
+            aktualni_snura = 0
+            for s in uziv_sazky:
+                if str(s.get("Stav_Hlavni")).lower() == "vyhra":
+                    aktualni_snura += 1
+                    if aktualni_snura > max_snura:
+                        max_snura = aktualni_snura
+                else:
+                    aktualni_snura = 0
+            
+            acc_hlavni = round((dt["hlavni_trefy"] / dt["celkem_vyhodnoceno"]) * 100, 1) if dt["celkem_vyhodnoceno"] > 0 else 0.0
+            stuj_status_local = UZIVATELE[h].get("status", "")
+            format_status = f"<div style='color: #aaaaaa; font-style: italic; font-size: 12px; margin-bottom: 12px;'>„{stuj_status_local}“</div>" if stuj_status_local else "<div style='margin-bottom: 12px;'></div>"
+
+            border_style = "border: 2px solid #FFF200;" if h == aktualni_uzivatel else "border: 1px solid #2d2d2d;"
+            bg_color = "#1c1c13" if h == aktualni_uzivatel else "#1a1a1a"
+
+            html_karta = f"""
+            <div style='background-color: {bg_color}; padding: 18px; border-radius: 8px; {border_style} text-align: center;'>
+                <h2 style='margin: 0 0 2px 0; color: #FFF200; font-size: 22px;'>{h}</h2>
+                {format_status}
+                <div style='font-size: 26px; font-weight: bold; color: #fff; margin-bottom: 15px;'>{acc_hlavni} % <span style='font-size:11px; color:#aaa; font-weight:normal;'>úspěšnost tipů</span></div>
+                
+                <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
+                    <span style='color:#aaa;'>👑 Přesné skóre (4b):</span><span style='font-weight:bold; color:#a2ffaf;'>{dt['presny_zasah']}x</span>
+                </div>
+                <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
+                    <span style='color:#aaa;'>📐 Správný rozdíl (2b):</span><span style='font-weight:bold; color:#5cd6ff;'>{dt['rozdil_zasah']}x</span>
+                </div>
+                <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
+                    <span style='color:#aaa;'>🤝 Jiná remíza (2b):</span><span style='font-weight:bold; color:#ffb77c;'>{dt['ostatni_remizy']}x</span>
+                </div>
+                <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
+                    <span style='color:#aaa;'>🛡️ Jistil se dvojšancí:</span><span style='font-weight:bold; color:#ffffff;'>{dt['pouzite_dvojšance']}x</span>
+                </div>
+                <div style='display:flex; justify-content:space-between; font-size:13px;'>
+                    <span style='color:#aaa;'>🔥 Nejlepší šňůra:</span><span style='font-weight:bold; color:#FFF200;'>{max_snura} po sobě</span>
+                </div>
+            </div>
+            """
+            with cols_karty[idx]: st.markdown(html_karta, unsafe_allow_html=True)
 
     # ==========================================
     # ZÁLOŽKA 4: ⚙️ ADMINISTRACE (VÝPOČET PODLE FINÁLNÍCH PRAVIDEL 4-2-2)
