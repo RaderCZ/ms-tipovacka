@@ -380,7 +380,7 @@ else:
             stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
             stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
             
-            # --- 🟢 GEOMETRICKY VYCENTROVANÉ KURZY V JEDNÉ HORIZONTÁLNÍ LINII ---
+            # --- 🟢 GEOMETRICKY VYCENTROVANÉ KURZY V JEDNÉ HORIZONTÁLNÍ LINII (BEZ HTML KOMENTÁŘŮ) ---
             k1_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_1', '')})</div>" if str(z.get('Kurz_1', '')).strip() else ""
             k2_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_2', '')})</div>" if str(z.get('Kurz_2', '')).strip() else ""
             kx_text = f"<div style='font-size: 13px; color: #888888; margin-top: 4px; font-weight: 400; text-align: center; width: 100%;'>({z.get('Kurz_X', '')})</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
