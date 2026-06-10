@@ -331,7 +331,7 @@ else:
         st.sidebar.markdown(f"<div style='margin-bottom: 14px; line-height: 1.2;'><span style='{styl_jmena}'>{i+1}. {znak} {jm} — {dt['body']} b.</span>{text_statusu}</div>", unsafe_allow_html=True)
 
     # ==========================================
-    # 🛠 POMOCNÁ FUNKCE PRO DETAIL ZÁPASU (S AUTOMATICKÝMI KURZY POD VLAJKAMI)
+    # 🛠 POMOCNÁ FUNKCE PRO DETAIL ZÁPASU (S NOVÝM INTEGRALNÍM SÁZENÍM)
     # ==========================================
     def vykresli_detail_zapasu(z, zapas_uzamcen, moje_sazky):
         stavajici_tip = next((s for s in moje_sazky if str(s.get("ID_zapasu")) == str(z["ID"])), None)
@@ -380,16 +380,11 @@ else:
             stred_text = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
             stred_color = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
             
-            # --- 🟢 VLAJKY + ORIENTAČNÍ KURZY POD NÁZVY TÝMŮ ---
-            k1_text = f"<div style='font-size: 13px; color: #FFF200; margin-top: 3px; font-weight: 500;'>Kurz: {z.get('Kurz_1', '')}</div>" if str(z.get('Kurz_1', '')).strip() else ""
-            k2_text = f"<div style='font-size: 13px; color: #FFF200; margin-top: 3px; font-weight: 500;'>Kurz: {z.get('Kurz_2', '')}</div>" if str(z.get('Kurz_2', '')).strip() else ""
-            kx_text = f"<div style='font-size: 12px; color: #888888; margin-top: 2px;'>X: {z.get('Kurz_X', '')}</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
-
             st.markdown(f"""
             <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px;'>
-                <div style='flex: 1; text-align: center;'>{img_domaci}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div>{k1_text}</div>
-                <div style='flex: 0.5; text-align: center;'><h2 style='color: {stred_color}; margin: 0; letter-spacing: 0px;'>{stred_text}</h2>{kx_text}</div>
-                <div style='flex: 1; text-align: center;'>{img_hoste}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div>{k2_text}</div>
+                <div style='flex: 1; text-align: center;'>{img_domaci}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div></div>
+                <div style='flex: 0.5; text-align: center;'><h2 style='color: {stred_color}; margin: 0; letter-spacing: 0px;'>{stred_text}</h2></div>
+                <div style='flex: 1; text-align: center;'>{img_hoste}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div></div>
             </div>
             """, unsafe_allow_html=True)
             st.markdown("---")
@@ -474,6 +469,7 @@ else:
     with tab1:
         st.subheader("📅 Nabídka zápasů")
         
+        # 🟢 OPRAVENO: Tabulka s vynucenou šířkou 100% pro dokonalé dotečení ke krajům
         with st.expander("📊 ZOBRAZIT BODOVACÍ SYSTÉM A PRAVIDLA"):
             st.markdown("""
             <div style="width: 100%; overflow-x: auto;">
@@ -549,6 +545,7 @@ else:
                 
                 if is_vyhodnoceno or (je_v_minulosti and not je_dnes) or str(z.get("Stav", "")).lower() == "ukonceno": skupina_odehrane.append(balicek)
                 elif je_dnes: skupina_dnesni.append(balicek)
+                else: skupina_nadchazejici.append(balicek)
                     
         with st.expander("🔥 DNEŠNÍ ZÁPASY", expanded=True):
             if skupina_dnesni:
@@ -635,29 +632,11 @@ else:
                         
                     with st.expander(titulek_radku):
                         if stavajici_tip:
-                            # --- 🟢 VLAJKY + KURZY I DO ZÁLOŽKY MOJE TIKETY ---
-                            img_domaci_mv = f"<img src='https://flagcdn.com/w160/{t_domaci['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_domaci['kod'] != "un" else ""
-                            img_hoste_mv = f"<img src='https://flagcdn.com/w160/{t_hoste['kod']}.png' width='70' style='border-radius: 4px;'><br>" if t_hoste['kod'] != "un" else ""
-                            stred_text_mv = str(z.get('Vysledek')) if je_zapas_ukoncen and z.get('Vysledek') else "VS"
-                            stred_color_mv = "#FFF200" if je_zapas_ukoncen and z.get('Vysledek') else "#888888"
-                            
-                            k1_text_mv = f"<div style='font-size: 13px; color: #FFF200; margin-top: 3px; font-weight: 500;'>Kurz: {z.get('Kurz_1', '')}</div>" if str(z.get('Kurz_1', '')).strip() else ""
-                            k2_text_mv = f"<div style='font-size: 13px; color: #FFF200; margin-top: 3px; font-weight: 500;'>Kurz: {z.get('Kurz_2', '')}</div>" if str(z.get('Kurz_2', '')).strip() else ""
-                            kx_text_mv = f"<div style='font-size: 12px; color: #888888; margin-top: 2px;'>X: {z.get('Kurz_X', '')}</div>" if (str(z.get('Kurz_X', '')).strip() and not je_zapas_ukoncen) else ""
-
-                            st.markdown(f"""
-                            <div style='display: flex; justify-content: space-between; align-items: center; width: 100%; margin-top: 10px; margin-bottom: 20px;'>
-                                <div style='flex: 1; text-align: center;'>{img_domaci_mv}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_domaci['jmeno']}</div>{k1_text_mv}</div>
-                                <div style='flex: 0.5; text-align: center;'><h2 style='color: {stred_color_mv}; margin: 0; letter-spacing: 0px;'>{stred_text_mv}</h2>{kx_text_mv}</div>
-                                <div style='flex: 1; text-align: center;'>{img_hoste_mv}<div style='font-size: 20px; font-weight: bold; margin-top: 5px;'>{t_hoste['jmeno']}</div>{k2_text_mv}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
-                            st.markdown("---")
-
                             if str(stavajici_tip.get("Zolik", "Ne")).lower() == "ano":
                                 st.markdown("<div style='background-color: #2a2a15; padding: 8px; border: 1px solid #FFF200; border-radius: 4px; margin-bottom: 12px; text-align: center;'><span style='color: #FFF200; font-weight: bold;'>🃏 ŽOLÍK AKTIVNÍ (2X BODY)</span></div>", unsafe_allow_html=True)
                             
                             c1, c2 = st.columns(2)
+                            # Podpora zobrazení starého i nového formátu tabulky
                             t_hl = stavajici_tip.get("Tip_Hlavni", stavajici_tip.get("Tip_1X2", "-"))
                             t_sk = stavajici_tip.get("Tip_Skore", "-")
                             
@@ -673,108 +652,17 @@ else:
                         else: st.warning("⚠️ Tento zápas jsi netipoval.")
 
     # ==========================================
-    # ZÁLOŽKA 3: STATISTIKY (BODOVÁ ANALÝZA DNA)
+    # ZÁLOŽKA 3: STATISTIKY
     # ==========================================
     with tab3:
         st.subheader("🏟️ Statistiky turnaje")
 
+        # 🔥 KLÍČOVÝ FIX: Nejdřív bezpečně vytvoříme seznam odehraných zápasů
         ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
-        celkem_odehrano_local = len(ukoncene_zapasy_local)
-
-        goly_celkem = 0
-        remizy_skutecne = 0
-
-        for zp in ukoncene_zapasy_local:
-            try:
-                hg, ag = map(int, str(zp.get("Vysledek")).split(":"))
-                goly_celkem += (hg + ag)
-                if hg == ag: remizy_skutecne += 1
-            except: pass
-
-        avg_goly = round(goly_celkem / celkem_odehrano_local, 2) if celkem_odehrano_local > 0 else 0.0
-        p_remiz = round((remizy_skutecne / celkem_odehrano_local) * 100, 1) if celkem_odehrano_local > 0 else 0.0
-
-        c1, c2, c3 = st.columns(3)
-        with c1: st.metric("Odehrané zápasy", f"{celkem_odehrano_local} ⚽")
-        with c2: st.metric("Gólový průměr", f"{avg_goly} 🔥")
-        with c3: st.metric("Zápasy s plichtou", f"{p_remiz} %")
-
-        st.markdown("---")
-        st.markdown("### 🧬 Profilování sázkařské DNA")
-
-        if celkem_odehrano_local == 0:
-            st.info("ℹ️ Karty sázkařských stylů se propočítají, jakmile do systému nahrajete první odehrané výsledky!")
-        else:
-            stats_hraci = {}
-            for h in UZIVATELE.keys():
-                stats_hraci[h] = {
-                    "celkem_vyhodnoceno": 0,
-                    "hlavni_trefy": 0,
-                    "presny_zasah": 0,
-                    "rozdil_zasah": 0,
-                    "ostatni_remizy": 0,
-                    "pouzite_dvojšance": 0,
-                    "ciste_tipy": 0
-                }
-
-            for s in vsechny_sazky:
-                h = s.get("Uzivatel")
-                if h not in stats_hraci: continue
-                if str(s.get("Stav_Tipu")).lower() != "vyhodnoceno": continue
-
-                stats_hraci[h]["celkem_vyhodnoceno"] += 1
-                
-                if str(s.get("Stav_Hlavni")).lower() == "vyhra":
-                    stats_hraci[h]["hlavni_trefy"] += 1
-
-                t_hl = str(s.get("Tip_Hlavni", ""))
-                if t_hl in ["10", "02"]: stats_hraci[h]["pouzite_dvojšance"] += 1
-                elif t_hl in ["1", "2", "X"]: stats_hraci[h]["ciste_tipy"] += 1
-
-                st_sk = str(s.get("Stav_Skore", "")).lower()
-                if st_sk == "presne": stats_hraci[h]["presny_zasah"] += 1
-                elif st_sk == "rozdil": stats_hraci[h]["rozdil_zasah"] += 1
-                elif st_sk == "remiza_ostatni": stats_hraci[h]["ostatni_remizy"] += 1
-
-            cols_karty = st.columns(3)
-            jmena_hracu = list(stats_hraci.keys())
-
-            for idx, h in enumerate(jmena_hracu):
-                if idx >= len(cols_karty): break
-                dt = stats_hraci[h]
-                
-                acc_hlavni = round((dt["hlavni_trefy"] / dt["celkem_vyhodnoceno"]) * 100, 1) if dt["celkem_vyhodnoceno"] > 0 else 0.0
-                vsechny_hl = dt["pouzite_dvojšance"] + dt["ciste_tipy"]
-                pct_opatrnost = round((dt["pouzite_dvojšance"] / vsechny_hl) * 100, 1) if vsechny_hl > 0 else 0.0
-                
-                if pct_opatrnost >= 45.0: profil_styl = "🐢 Opatrný betonář"
-                elif pct_opatrnost <= 15.0: profil_styl = "💣 Hazardér z povolání"
-                else: profil_styl = "🧠 Vyvážený stratég"
-
-                border_style = "border: 2px solid #FFF200;" if h == aktualni_uzivatel else "border: 1px solid #2d2d2d;"
-                bg_color = "#1c1c13" if h == aktualni_uzivatel else "#1a1a1a"
-
-                html_karta = f"""
-                <div style='background-color: {bg_color}; padding: 18px; border-radius: 8px; {border_style} text-align: center;'>
-                    <h2 style='margin: 0 0 5px 0; color: #FFF200; font-size: 22px;'>{h}</h2>
-                    <div style='font-size: 13px; color: #aaaaaa; margin-bottom: 12px; font-style: italic;'>{profil_styl}</div>
-                    <div style='font-size: 26px; font-weight: bold; color: #fff; margin-bottom: 15px;'>{acc_hlavni} % <span style='font-size:11px; color:#aaa; font-weight:normal;'>úspěšnost tipů</span></div>
-                    
-                    <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
-                        <span style='color:#aaa;'>👑 Přesný výsledek (4b):</span><span style='font-weight:bold; color:#a2ffaf;'>{dt['presny_zasah']}x</span>
-                    </div>
-                    <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
-                        <span style='color:#aaa;'>📐 Trefený rozdíl (2b):</span><span style='font-weight:bold; color:#5cd6ff;'>{dt['rozdil_zasah']}x</span>
-                    </div>
-                    <div style='display:flex; justify-content:space-between; margin-bottom:8px; font-size:13px; border-bottom: 1px solid #252525; padding-bottom:5px;'>
-                        <span style='color:#aaa;'>🤝 Jiná remíza (2b):</span><span style='font-weight:bold; color:#ffb77c;'>{dt['ostatni_remizy']}x</span>
-                    </div>
-                    <div style='display:flex; justify-content:space-between; font-size:13px;'>
-                        <span style='color:#aaa;'>🛡️ Jistil se dvojšancí:</span><span style='font-weight:bold; color:#ffffff;'>{dt['pouzite_dvojšance']}x</span>
-                    </div>
-                </div>
-                """
-                with cols_karty[idx]: st.markdown(html_karta, unsafe_allow_html=True)
+        
+        # Teď už st.metric proměnnou bezpečně najde a nespadne
+        st.metric("Odehrané zápasy", f"{len(ukoncene_zapasy_local)} ⚽")
+        st.info("ℹ️ Statistiky turnajové DNA se automaticky rozjedou po nasazení a vyhodnocení prvních zápasů v novém formátu.")
 
     # ==========================================
     # ZÁLOŽKA 4: ⚙️ ADMINISTRACE (VÝPOČET PODLE FINÁLNÍCH PRAVIDEL 4-2-2)
@@ -910,6 +798,7 @@ else:
                             
                             if ":" in vysledek_zapasu:
                                 try:
+                                    # Oficiální skóre z API (u Play-off automaticky s přičteným penalty gólem)
                                     real_home, real_away = map(int, vysledek_zapasu.split(":"))
                                     real_1x2 = "1" if real_home > real_away else ("2" if real_home < real_away else "X")
                                     
