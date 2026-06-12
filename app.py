@@ -948,24 +948,23 @@ else:
                                     s_hlavni = "prohra"
                                     s_skore = "prohra"
                                     
+                                    # 1. VYHODNOCENÍ HLAVNÍ SÁZKY
                                     if hlavni_vyhra:
                                         s_hlavni = "vyhra"
-                                        # Bodování hlavní sázky
                                         if t_hlavni in ["1", "2"]: body_zisk += 2.0
                                         elif t_hlavni == "X": body_zisk += 3.0
                                         elif t_hlavni in ["10", "02"]: body_zisk += 1.0
                                         
-                                        # Bodování skóre (jen když vyšla hlavní sázka)
-                                        if tip_home == real_home and tip_away == real_away:
-                                            body_zisk += 4.0
-                                            s_skore = "presne"
-                                        elif real_1x2 == "X" and tip_home == tip_away:
-                                            # Jiné remízové skóre (např. zápas 2:2, tip 1:1) -> 2 body
-                                            body_zisk += 2.0
-                                            s_skore = "remiza_ostatni"
-                                        elif (tip_home - tip_away) == (real_home - real_away):
-                                            body_zisk += 2.0
-                                            s_skore = "rozdil"
+                                    # 2. KOMPLETNĚ NEZÁVISLÉ VYHODNOCENÍ SKÓRE (PRO VŠECHNY!)
+                                    if tip_home == real_home and tip_away == real_away:
+                                        body_zisk += 4.0
+                                        s_skore = "presne"
+                                    elif real_1x2 == "X" and tip_home == tip_away:
+                                        body_zisk += 2.0
+                                        s_skore = "remiza_ostatni"
+                                    elif (tip_home - tip_away) == (real_home - real_away):
+                                        body_zisk += 2.0
+                                        s_skore = "rozdil"
                                     
                                     # Žolík násobič
                                     if str(s.get("Zolik", "Ne")).lower() == "ano":
