@@ -665,7 +665,17 @@ else:
                                 st.markdown("**Jak sázeli ostatní:**")
                                 tipy_ostatnich = [s for s in vsechny_sazky if str(s.get("ID_zapasu")) == str(z["ID"]) and str(s.get("Uzivatel")) != aktualni_uzivatel]
                                 for t in tipy_ostatnich:
-                                    st.write(f"👤 **{t['Uzivatel']}**: Hlavní: `{t.get('Tip_Hlavni', t.get('Tip_1X2'))}` | Skóre: `{t.get('Tip_Skore')}`")
+                                    # Podpora pro oba formáty klíčů hlavní sázky
+                                    t_hl = t.get('Tip_Hlavni', t.get('Tip_1X2', '-'))
+                                    t_sk = t.get('Tip_Skore', '-')
+                                    
+                                    # Pokud je zápas už vyhodnocený, vytáhneme body, jinak nedáme nic
+                                    if str(t.get("Stav_Tipu", "")).lower() == "vyhodnoceno":
+                                        body_text = f" **(+{t.get('Body_Ziskane', 0)} b.)**"
+                                    else:
+                                        body_text = ""
+                                        
+                                    st.write(f"👤 **{t['Uzivatel']}**: Hlavní: `{t_hl}` | Skóre: `{t_sk}`{body_text}")
                         else: st.warning("⚠️ Tento zápas jsi netipoval.")
 
     # ==========================================
