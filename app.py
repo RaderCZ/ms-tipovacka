@@ -298,12 +298,7 @@ else:
     
     moje_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel", "")) == aktualni_uzivatel]
     
-    # --- RESET ŽOLÍKŮ PRO PLAY-OFF (IGNORUJEME ID ZÁPASŮ ZE SKUPINY 1-72, POKUD JE PLAYOFF AKTIVNÍ) ---
-    if je_playoff:
-        pouziti_zolici = sum(1 for s in moje_sazky if str(s.get("Zolik", "Ne")).lower() == "ano" and int(s.get("ID_zapasu", 0)) > 72)
-    else:
-        pouziti_zolici = sum(1 for s in moje_sazky if str(s.get("Zolik", "Ne")).lower() == "ano")
-        
+    pouziti_zolici = sum(1 for s in moje_sazky if str(s.get("Zolik", "Ne")).lower() == "ano")
     max_zoliku = 3  
     zbyva_zoliku = max(0, max_zoliku - pouziti_zolici)
     
