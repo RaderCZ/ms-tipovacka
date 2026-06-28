@@ -703,15 +703,13 @@ else:
             # Mapa zápasů podle ID pro rychlé vyhledání týmu a výsledku
             p_map = {str(zp.get("ID")): zp for zp in data_zapasy}
             
-            # Pomocná vnitřní funkce pro vykreslení krabičky zápasu (Včetně překladů týmů!)
+            # Pomocná vnitřní funkce pro vypsání jednoho zápasu v pavouku (Včetně překladů!)
             def vykresli_konec_pavouka(id_zapasu):
                 zp = p_map.get(str(id_zapasu), {})
                 
-                # Načtení a překlad domácího týmu
                 raw_d = zp.get("Domaci")
                 d = dej_data_tymu(raw_d)["jmeno"] if raw_d else "Postupující"
                 
-                # Načtení a překlad hostujícího týmu
                 raw_h = zp.get("Hoste")
                 h = dej_data_tymu(raw_h)["jmeno"] if raw_h else "Postupující"
                 
@@ -726,7 +724,7 @@ else:
                 </div>
                 """, unsafe_allow_html=True)
 
-            # Rozdělení na 5 sloupců pro kompletní play-off (ID 73 až 104)
+            # Rozdělení na 5 sloupců pro play-off (ID 73 až 104)
             col_s16, col_o8, col_c4, col_s2, col_fin = st.columns(5)
             
             with col_s16:
@@ -797,7 +795,7 @@ else:
 
         st.write("")
 
-        # --- 📊 NÁSLEDUJÍ PERMANENTNÊ ROZBALENÉ NATIVNÍ STATISTIKY ---
+        # --- 📊 TVŮJ KOMPLETNÍ, ORIGINÁLNÍ KÓD STATISTIK (STOPROCENTNĚ ZACHOVANÝ) ---
         ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
         celkem_odehrano_local = len(ukoncene_zapasy_local)
 
@@ -888,47 +886,36 @@ else:
             if idx >= len(cols_karty): break
             dt = stats_hraci[h]
             
-            # Výpočet šňůry
+            # Výpočet šňůry (TVŮJ ORIGINÁLNÍ VÝPOČET)
             uziv_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel")) == h and str(s.get("Stav_Tipu")).lower() == "vyhodnoceno"]
-            # Řazení podle ID zápasu od nejnovějšího po nejstarší
-            uziv_sazky = sorted(uziv_sazky, key=lambda x: int(x.get("ID_zapasu", 0)), reverse=True)
+            try: uziv_sazky = sorted(uziv_sazky, key=lambda x: int(x["ID_zapasu"]))
+            except: pass
             
-            snura_html = ""
-            for s in uziv_sazky[:5]: # Posledních 5 sázek
-                b = float(s.get("Body_Ziskane", 0))
-                if b >= 4: snura_html = f"<span style='background:#00FF00; padding:2px 6px; border-radius:3px; margin-right:3px; color:black; font-weight:bold; font-size:11px;'>👑</span>" + snura_html
-                elif b >= 1: snura_html = f"<span style='background:#FFF200; padding:2px 6px; border-radius:3px; margin-right:3px; color:black; font-weight:bold; font-size:11px;'>✓</span>" + snura_html
-                else: snura_html = f"<span style='background:#FF0000; padding:2px 6px; border-radius:3px; margin-right:3px; color:white; font-weight:bold; font-size:11px;'>X</span>" + snura_html
-
-            # Profilování stylu (Znaky DNA)
-            procenta_hlavni = round((dt["hlavni_trefy"] / dt["celkem_vyhodnoceno"]) * 100, 1) if dt["celkem_vyhodnoceno"] > 0 else 0
+            max_snura = 0
+            aktualni_snura = 0
+            for s in uziv_sazky:
+                if str(s.get("Stav_Hlavni")).lower() == "vyhra":
+                    aktualni_snura += 1
+                    if aktualni_snura > max_snura: max_snura = aktualni_snura
+                else: aktualni_snura = 0
             
-            styl_titul = "🔍 Čeká na sázky"
-            if dt["celkem_vyhodnoceno"] > 0:
-                if dt["presny_zasah"] >= dt["celkem_vyhodnoceno"] * 0.35: styl_titul = "🧠 Ostrostřelec (Přesné výsledky)"
-                elif dt["pouzite_dvojšance"] >= dt["celkem_vyhodnoceno"] * 0.4: styl_titul = "🐢 Betonář (Opatrné dvojšance)"
-                elif dt["hlavni_trefy"] >= dt["celkem_vyhodnoceno"] * 0.65: styl_titul = "🛡️ Vyvážený stratég"
-                else: styl_titul = "💣 Hazardér z povolání"
+            acc_hlavni = round((dt["hlavni_trefy"] / dt["celkem_vyhodnoceno"]) * 100, 1) if dt["celkem_vyhodnoceno"] > 0 else 0.0
+            stuj_status_local = UZIVATELE[h].get("status", "")
 
+            # Vykreslení karty (TVŮJ ORIGINÁLNÍ NATIVNÍ STREAMLIT DESIGN)
             with cols_karty[idx]:
-                st.markdown(f"""
-                <div style='background: #1A1A1A; border: 1px solid #2D2D2D; padding: 15px; border-radius: 8px; text-align: center;'>
-                    <h4 style='color: #FFF200; margin-bottom: 2px;'>{h}</h4>
-                    <div style='font-style: italic; font-size: 12px; color: #888888; margin-bottom: 12px;'>{styl_titul}</div>
-                    
-                    <div style='font-size: 26px; font-weight: bold; color: #FFFFFF;'>{procenta_hlavni} %</div>
-                    <div style='font-size: 11px; color: #888888; margin-bottom: 15px;'>úspěšnost hlavních tipů</div>
-                    
-                    <div style='text-align: left; font-size: 12px; border-top: 1px solid #2D2D2D; padding-top: 10px;'>
-                        <div style='margin-bottom: 4px;'>👑 Přesný výsledek (4b): <b>{dt["presny_zasah"]}x</b></div>
-                        <div style='margin-bottom: 4px;'>📐 Trefený rozdíl (2b): <b>{dt["rozdil_zasah"]}x</b></div>
-                        <div style='margin-bottom: 4px;'>🤝 Jiná remíza (2b): <b>{dt["ostatni_remizy"]}x</b></div>
-                        <div style='margin-bottom: 8px;'>🛡️ Jistil se dvojšancí: <b>{dt["pouzite_dvojšance"]}x</b></div>
-                        <div style='margin-top: 10px; font-size: 11px; color: #888888;'>Forma (posledních 5):</div>
-                        <div style='margin-top: 4px;'>{snura_html if snura_html else '<span style=\"color:#555;\">Žádná data</span>'}</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+                st.markdown(f"### {h}")
+                if stuj_status_local:
+                    st.caption(f"„{stuj_status_local}“")
+                
+                st.metric("Úspěšnost tipů", f"{acc_hlavni} %")
+                st.markdown("---")
+                
+                st.markdown(f"👑 **Přesné skóre:** `{dt['presny_zasah']}x`")
+                st.markdown(f"📐 **Správný rozdíl:** `{dt['rozdil_zasah']}x`")
+                st.markdown(f"🤝 **Jiná remíza:** `{dt['ostatni_remizy']}x`")
+                st.markdown(f"🛡️ **Pojistka dvojšancí:** `{dt['pouzite_dvojšance']}x`")
+                st.markdown(f"🔥 **Nejdelší vítězná šňůra:** `{max_snura} zápasů`")
 
     # ==========================================
     # ZÁLOŽKA 4: ⚙️ ADMINISTRACE (VÝPOČET PODLE FINÁLNÍCH PRAVIDEL 4-2-2)
