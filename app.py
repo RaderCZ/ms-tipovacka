@@ -703,11 +703,18 @@ else:
             # Mapa zápasů podle ID pro rychlé vyhledání týmu a výsledku
             p_map = {str(zp.get("ID")): zp for zp in data_zapasy}
             
-            # Pomocná vnitřní funkce pro vykreslení krabičky zápasu
+            # Pomocná vnitřní funkce pro vykreslení krabičky zápasu (Včetně překladů týmů!)
             def vykresli_konec_pavouka(id_zapasu):
                 zp = p_map.get(str(id_zapasu), {})
-                d = str(zp.get("Domaci", "Postupující")).strip() if zp.get("Domaci") else "Postupující"
-                h = str(zp.get("Hoste", "Postupující")).strip() if zp.get("Hoste") else "Postupující"
+                
+                # Načtení a překlad domácího týmu
+                raw_d = zp.get("Domaci")
+                d = dej_data_tymu(raw_d)["jmeno"] if raw_d else "Postupující"
+                
+                # Načtení a překlad hostujícího týmu
+                raw_h = zp.get("Hoste")
+                h = dej_data_tymu(raw_h)["jmeno"] if raw_h else "Postupující"
+                
                 v = str(zp.get("Vysledek", "")).strip()
                 skore_html = f" <span style='color: #FFF200; font-weight: bold; background: #222222; padding: 2px 6px; border-radius: 4px; margin-left: 5px;'>{v}</span>" if v else ""
                 
@@ -768,8 +775,11 @@ else:
                 st.write("<div style='margin-top: 360px;'></div>", unsafe_allow_html=True)
                 
                 zp_f = p_map.get("103", {})
-                d_f = str(zp_f.get("Domaci", "Finalista 1")).strip() if zp_f.get("Domaci") else "Finalista 1"
-                h_f = str(zp_f.get("Hoste", "Finalista 2")).strip() if zp_f.get("Hoste") else "Finalista 2"
+                raw_df = zp_f.get("Domaci")
+                d_f = dej_data_tymu(raw_df)["jmeno"] if raw_df else "Finalista 1"
+                raw_hf = zp_f.get("Hoste")
+                h_f = dej_data_tymu(raw_hf)["jmeno"] if raw_hf else "Finalista 2"
+                
                 v_f = str(zp_f.get("Vysledek", "")).strip()
                 skore_f_html = f" <span style='color: #FFF200; font-weight: bold; background: #121212; padding: 2px 6px; border-radius: 4px; margin-left: 5px;'>{v_f}</span>" if v_f else ""
                 
@@ -787,12 +797,12 @@ else:
 
         st.write("")
 
-        # --- 📊 NÁSLEDUJÍ PERMANENTNĚ ROZBALENÉ NATIVNÍ STATISTIKY ---
+        # --- 📊 NÁSLEDUJÍ PERMANENTNÊ ROZBALENÉ NATIVNÍ STATISTIKY ---
         ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
         celkem_odehrano_local = len(ukoncene_zapasy_local)
 
         if celkem_odehrano_local == 0:
-            st.info("ℹ️ Turnajové statistiky and DNA hráčů se plně propočítají, jakmile se odehrají první zápasy!")
+            st.info("ℹ️ Turnajové statistiky a DNA hráčů se plně propočítají, jakmile se odehrají první zápasy!")
         else:
             goly_celkem = 0
             remizy_skutecne = 0
