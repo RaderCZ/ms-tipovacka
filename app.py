@@ -695,11 +695,104 @@ else:
     with tab3:
         st.subheader("🏟️ Statistiky turnaje")
 
+        # --- 🏆 ROZBALOVACÍ PAVOUK TURNAJE NA PRVNÍM MÍSTĚ ---
+        with st.expander("🏟️ ZOBRAZIT VYŘAZOVACÍHO PAVOUKA TURNAJE", expanded=False):
+            st.write("")
+            st.markdown("<h3 style='text-align: center; color: #FFF200; font-family: \"Staatliches\", sans-serif; letter-spacing: 1px; margin-bottom: 20px;'>🏆 VYŘAZOVACÍ PAVOUK (OD 1/16 FINÁLE DO FINÁLE)</h3>", unsafe_allow_html=True)
+            
+            # Mapa zápasů podle ID pro rychlé vyhledání týmu a výsledku
+            p_map = {str(zp.get("ID")): zp for zp in data_zapasy}
+            
+            # Pomocná vnitřní funkce pro vykreslení krabičky zápasu
+            def vykresli_konec_pavouka(id_zapasu):
+                zp = p_map.get(str(id_zapasu), {})
+                d = str(zp.get("Domaci", "Postupující")).strip() if zp.get("Domaci") else "Postupující"
+                h = str(zp.get("Hoste", "Postupující")).strip() if zp.get("Hoste") else "Postupující"
+                v = str(zp.get("Vysledek", "")).strip()
+                skore_html = f" <span style='color: #FFF200; font-weight: bold; background: #222222; padding: 2px 6px; border-radius: 4px; margin-left: 5px;'>{v}</span>" if v else ""
+                
+                st.markdown(f"""
+                <div style='background: #1A1A1A; border: 1px solid #2D2D2D; padding: 8px; border-radius: 6px; margin-bottom: 8px; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);'>
+                    <div style='font-size: 10px; color: #888888; margin-bottom: 2px; font-weight: bold;'>Zápas #{id_zapasu}</div>
+                    <div style='font-size: 12px; color: #FFFFFF; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>{d}</div>
+                    <div style='font-size: 12px; color: #FFFFFF; font-weight: 500; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>{h}{skore_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # Rozdělení na 5 sloupců pro kompletní play-off (ID 73 až 104)
+            col_s16, col_o8, col_c4, col_s2, col_fin = st.columns(5)
+            
+            with col_s16:
+                st.markdown("<h6 style='color: #FFF200; border-bottom: 2px solid #FFF200; padding-bottom: 4px; font-family: \"Staatliches\", sans-serif;'>1/16 Finále</h6>", unsafe_allow_html=True)
+                for i in range(73, 89): vykresli_konec_pavouka(i)
+                
+            with col_o8:
+                st.markdown("<h6 style='color: #FFF200; border-bottom: 2px solid #FFF200; padding-bottom: 4px; font-family: \"Staatliches\", sans-serif;'>1/8 Finále</h6>", unsafe_allow_html=True)
+                st.write("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(89)
+                st.write("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(90)
+                st.write("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(91)
+                st.write("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(92)
+                st.write("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(93)
+                st.write("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(94)
+                st.write("<div style='margin-top: 50px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(95)
+                st.write("<div style='margin-top: 25px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(96)
+                
+            with col_c4:
+                st.markdown("<h6 style='color: #FFF200; border-bottom: 2px solid #FFF200; padding-bottom: 4px; font-family: \"Staatliches\", sans-serif;'>Čtvrtfinále</h6>", unsafe_allow_html=True)
+                st.write("<div style='margin-top: 75px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(97)
+                st.write("<div style='margin-top: 190px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(98)
+                st.write("<div style='margin-top: 190px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(99)
+                st.write("<div style='margin-top: 190px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(100)
+                
+            with col_s2:
+                st.markdown("<h6 style='color: #FFF200; border-bottom: 2px solid #FFF200; padding-bottom: 4px; font-family: \"Staatliches\", sans-serif;'>Semifinále</h6>", unsafe_allow_html=True)
+                st.write("<div style='margin-top: 175px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(101)
+                st.write("<div style='margin-top: 450px;'></div>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(102)
+                
+            with col_fin:
+                st.markdown("<h6 style='color: #00FF00; border-bottom: 2px solid #00FF00; padding-bottom: 4px; font-family: \"Staatliches\", sans-serif;'>FINÁLE</h6>", unsafe_allow_html=True)
+                st.write("<div style='margin-top: 360px;'></div>", unsafe_allow_html=True)
+                
+                zp_f = p_map.get("103", {})
+                d_f = str(zp_f.get("Domaci", "Finalista 1")).strip() if zp_f.get("Domaci") else "Finalista 1"
+                h_f = str(zp_f.get("Hoste", "Finalista 2")).strip() if zp_f.get("Hoste") else "Finalista 2"
+                v_f = str(zp_f.get("Vysledek", "")).strip()
+                skore_f_html = f" <span style='color: #FFF200; font-weight: bold; background: #121212; padding: 2px 6px; border-radius: 4px; margin-left: 5px;'>{v_f}</span>" if v_f else ""
+                
+                st.markdown(f"""
+                <div style='background: #2A2A15; border: 2px solid #FFF200; padding: 8px; border-radius: 8px; box-shadow: 0px 0px 12px rgba(255,242,0,0.3);'>
+                    <div style='font-size: 10px; color: #FFF200; margin-bottom: 4px; font-weight: bold;'>🏆 FINÁLE (#103)</div>
+                    <div style='font-size: 11px; color: #FFFFFF; font-weight: bold; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>{d_f}</div>
+                    <div style='font-size: 11px; color: #FFFFFF; font-weight: bold; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;'>{h_f}{skore_f_html}</div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.write("<div style='margin-top: 120px;'></div>", unsafe_allow_html=True)
+                st.markdown("<h6 style='color: #888888; border-bottom: 1px solid #2D2D2D; padding-bottom: 2px;'>O 3. místo</h6>", unsafe_allow_html=True)
+                vykresli_konec_pavouka(104)
+
+        st.write("")
+
+        # --- 📊 NÁSLEDUJÍ PERMANENTNĚ ROZBALENÉ NATIVNÍ STATISTIKY ---
         ukoncene_zapasy_local = [zp for zp in data_zapasy if str(zp.get("Stav", "")).lower() == "ukonceno" and ":" in str(zp.get("Vysledek", ""))]
         celkem_odehrano_local = len(ukoncene_zapasy_local)
 
         if celkem_odehrano_local == 0:
-            st.info("ℹ️ Turnajové statistiky a DNA hráčů se plně propočítají, jakmile se odehrají první zápasy!")
+            st.info("ℹ️ Turnajové statistiky and DNA hráčů se plně propočítají, jakmile se odehrají první zápasy!")
         else:
             goly_celkem = 0
             remizy_skutecne = 0
@@ -787,35 +880,45 @@ else:
             
             # Výpočet šňůry
             uziv_sazky = [s for s in vsechny_sazky if str(s.get("Uzivatel")) == h and str(s.get("Stav_Tipu")).lower() == "vyhodnoceno"]
-            try: uziv_sazky = sorted(uziv_sazky, key=lambda x: int(x["ID_zapasu"]))
-            except: pass
+            # Řazení podle ID zápasu od nejnovějšího po nejstarší
+            uziv_sazky = sorted(uziv_sazky, key=lambda x: int(x.get("ID_zapasu", 0)), reverse=True)
             
-            max_snura = 0
-            aktualni_snura = 0
-            for s in uziv_sazky:
-                if str(s.get("Stav_Hlavni")).lower() == "vyhra":
-                    aktualni_snura += 1
-                    if aktualni_snura > max_snura: max_snura = aktualni_snura
-                else: aktualni_snura = 0
-            
-            acc_hlavni = round((dt["hlavni_trefy"] / dt["celkem_vyhodnoceno"]) * 100, 1) if dt["celkem_vyhodnoceno"] > 0 else 0.0
-            stuj_status_local = UZIVATELE[h].get("status", "")
+            snura_html = ""
+            for s in uziv_sazky[:5]: # Posledních 5 sázek
+                b = float(s.get("Body_Ziskane", 0))
+                if b >= 4: snura_html = f"<span style='background:#00FF00; padding:2px 6px; border-radius:3px; margin-right:3px; color:black; font-weight:bold; font-size:11px;'>👑</span>" + snura_html
+                elif b >= 1: snura_html = f"<span style='background:#FFF200; padding:2px 6px; border-radius:3px; margin-right:3px; color:black; font-weight:bold; font-size:11px;'>✓</span>" + snura_html
+                else: snura_html = f"<span style='background:#FF0000; padding:2px 6px; border-radius:3px; margin-right:3px; color:white; font-weight:bold; font-size:11px;'>X</span>" + snura_html
 
-            # Vykreslení karty pomocí čistého Streamlitu bez surového HTML
+            # Profilování stylu (Znaky DNA)
+            procenta_hlavni = round((dt["hlavni_trefy"] / dt["celkem_vyhodnoceno"]) * 100, 1) if dt["celkem_vyhodnoceno"] > 0 else 0
+            
+            styl_titul = "🔍 Čeká na sázky"
+            if dt["celkem_vyhodnoceno"] > 0:
+                if dt["presny_zasah"] >= dt["celkem_vyhodnoceno"] * 0.35: styl_titul = "🧠 Ostrostřelec (Přesné výsledky)"
+                elif dt["pouzite_dvojšance"] >= dt["celkem_vyhodnoceno"] * 0.4: styl_titul = "🐢 Betonář (Opatrné dvojšance)"
+                elif dt["hlavni_trefy"] >= dt["celkem_vyhodnoceno"] * 0.65: styl_titul = "🛡️ Vyvážený stratég"
+                else: styl_titul = "💣 Hazardér z povolání"
+
             with cols_karty[idx]:
-                st.markdown(f"### {h}")
-                if stuj_status_local:
-                    st.caption(f"„{stuj_status_local}“")
-                
-                st.metric("Úspěšnost tipů", f"{acc_hlavni} %")
-                st.markdown("---")
-                
-                # Výpis jednotlivých statistik pod sebe
-                st.markdown(f"👑 **Přesné skóre:** `{dt['presny_zasah']}x`")
-                st.markdown(f"📐 **Správný rozdíl:** `{dt['rozdil_zasah']}x`")
-                st.markdown(f"🤝 **Jiná remíza:** `{dt['ostatni_remizy']}x`")
-                st.markdown(f"🛡️ **Pojistka dvojšancí:** `{dt['pouzite_dvojšance']}x`")
-                st.markdown(f"🔥 **Nejlepší šňůra:** `{max_snura} v řadě`")
+                st.markdown(f"""
+                <div style='background: #1A1A1A; border: 1px solid #2D2D2D; padding: 15px; border-radius: 8px; text-align: center;'>
+                    <h4 style='color: #FFF200; margin-bottom: 2px;'>{h}</h4>
+                    <div style='font-style: italic; font-size: 12px; color: #888888; margin-bottom: 12px;'>{styl_titul}</div>
+                    
+                    <div style='font-size: 26px; font-weight: bold; color: #FFFFFF;'>{procenta_hlavni} %</div>
+                    <div style='font-size: 11px; color: #888888; margin-bottom: 15px;'>úspěšnost hlavních tipů</div>
+                    
+                    <div style='text-align: left; font-size: 12px; border-top: 1px solid #2D2D2D; padding-top: 10px;'>
+                        <div style='margin-bottom: 4px;'>👑 Přesný výsledek (4b): <b>{dt["presny_zasah"]}x</b></div>
+                        <div style='margin-bottom: 4px;'>📐 Trefený rozdíl (2b): <b>{dt["rozdil_zasah"]}x</b></div>
+                        <div style='margin-bottom: 4px;'>🤝 Jiná remíza (2b): <b>{dt["ostatni_remizy"]}x</b></div>
+                        <div style='margin-bottom: 8px;'>🛡️ Jistil se dvojšancí: <b>{dt["pouzite_dvojšance"]}x</b></div>
+                        <div style='margin-top: 10px; font-size: 11px; color: #888888;'>Forma (posledních 5):</div>
+                        <div style='margin-top: 4px;'>{snura_html if snura_html else '<span style=\"color:#555;\">Žádná data</span>'}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
 
     # ==========================================
     # ZÁLOŽKA 4: ⚙️ ADMINISTRACE (VÝPOČET PODLE FINÁLNÍCH PRAVIDEL 4-2-2)
