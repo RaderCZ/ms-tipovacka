@@ -915,7 +915,7 @@ else:
                 st.markdown(f"📐 **Správný rozdíl:** `{dt['rozdil_zasah']}x`")
                 st.markdown(f"🤝 **Jiná remíza:** `{dt['ostatni_remizy']}x`")
                 st.markdown(f"🛡️ **Pojistka dvojšancí:** `{dt['pouzite_dvojšance']}x`")
-                st.markdown(f"🔥 **Nejdelší vítězná šňůra:** `{max_snura} zápasů`")
+                st.markdown(f"🔥 **Nejdelší vítězná šňůra:** `{max_snura}x`")
 
     # ==========================================
     # ZÁLOŽKA 4: ⚙️ ADMINISTRACE (VÝPOČET PODLE FINÁLNÍCH PRAVIDEL 4-2-2)
