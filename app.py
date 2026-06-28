@@ -698,7 +698,7 @@ else:
         # --- 🏆 ROZBALOVACÍ PAVOUK TURNAJE NA PRVNÍM MÍSTĚ ---
         with st.expander("🏟️ ZOBRAZIT VYŘAZOVACÍHO PAVOUKA TURNAJE", expanded=False):
             st.write("")
-            st.markdown("<h3 style='text-align: center; color: #FFF200; font-family: \"Staatliches\", sans-serif; letter-spacing: 1px; margin-bottom: 20px;'>🏆 VYŘAZOVACÍ PAVOUK (OD 1/16 FINÁLE DO FINÁLE)</h3>", unsafe_allow_html=True)
+            st.markdown("<h3 style='text-align: center; color: #FFF200; font-family: \"Staatliches\", sans-serif; letter-spacing: 1px; margin-bottom: 20px;'>🏆 VYŘAZOVACÍ PAVOUK</h3>", unsafe_allow_html=True)
             
             # Mapa zápasů podle ID pro rychlé vyhledání týmu a výsledku
             p_map = {str(zp.get("ID")): zp for zp in data_zapasy}
@@ -751,7 +751,7 @@ else:
                 vykresli_konec_pavouka(96)
                 
             with col_c4:
-                st.markdown("<h6 style='color: #FFF200; border-bottom: 2px solid #FFF200; padding-bottom: 4px; font-family: \"Staatliches\", sans-serif;'>Čtvrtfinále</h6>", unsafe_allow_html=True)
+                st.markdown("<h6 style='color: #FFF200; border-bottom: 2px solid #FFF200; padding-bottom: 4px; font-family: \"Staatliches\", sans-serif;'>1/4 Finále</h6>", unsafe_allow_html=True)
                 st.write("<div style='margin-top: 75px;'></div>", unsafe_allow_html=True)
                 vykresli_konec_pavouka(97)
                 st.write("<div style='margin-top: 190px;'></div>", unsafe_allow_html=True)
