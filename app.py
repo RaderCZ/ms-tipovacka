@@ -249,6 +249,14 @@ else:
     data_uzivatele = nacti_uzivatele()
     data_zapasy = nacti_zapasy()
     vsechny_sazky = nacti_sazky()
+    
+# --- BEZPEČNÉ DYNAMICKÉ NAČTENÍ REŽIMU PLAYOFF Z TABULKY ZÁPASY (BUŇKA V1) ---
+    try:
+        sheet_zapasy_raw = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
+        stav_playoff_v_tabulce = sheet_zapasy_raw.acell('V1').value
+        je_playoff = str(stav_playoff_v_tabulce).strip().lower() == "ano"
+    except:
+        je_playoff = False  # Výchozí stav, pokud by selhalo spojení
 
     UZIVATELE = {}
     for radek in data_uzivatele:
@@ -337,9 +345,6 @@ else:
         stavajici_tip = next((s for s in moje_sazky if str(s.get("ID_zapasu")) == str(z["ID"])), None)
         t_domaci = dej_data_tymu(z['Domaci'])
         t_hoste = dej_data_tymu(z['Hoste'])
-        
-        # Detekce fáze turnaje: Pokud chybí Kurz_X, zápas je brán jako PLAY-OFF (bez remízy)
-        je_playoff = str(z.get("Kurz_X", "")).strip() == ""
         
         je_zapas_ukoncen = str(z.get("Stav", "")).lower() == "ukonceno"
         skore_text = f" ({z.get('Vysledek', '')})" if z.get('Vysledek') else ""
@@ -452,6 +457,12 @@ else:
                 if zbyva_zoliku > 0 or uz_ma_zolika:
                     chce_zolika = st.checkbox("🃏 Aktivovat ŽOLÍKA (Dvojnásobné body za celý zápas!)", value=uz_ma_zolika, key=f"zol_{z['ID']}")
                 else: st.caption("❌ Už jsi vyčerpal všech 3 žolíky pro tuto fázi.")
+                
+# --- OCHRANA PROTI REMÍZOVÉMU SKÓRE V PLAY-OFF ---
+                ZABLOKOVAT_ZAPIS = False
+                if je_playoff and tip_goly_home == tip_goly_away:
+                    st.error("🚨 **V play-off zápase nesmíš tipovat nerozhodný výsledek!**")
+                    ZABLOKOVAT_ZAPIS = True
                 
                 text_tlacitka = "🔄 AKTUALIZOVAT TIKET" if stavajici_tip else "💾 VSADIT TIKET"
                 if st.button(text_tlacitka, key=f"btn_{z['ID']}", type="primary"):
@@ -817,6 +828,20 @@ else:
             st.warning("Sem mají přístup pouze administrátoři.")
         else:
             st.subheader("⚙️ Ovládací panel administrátora")
+            
+            # --- 🎛️ SEKCE: ADMIN PŘEPÍNAČ FÁZE TURNAJE (BEZPEČNÝ ZÁPIS DO ZÁPASY V1) ---
+            st.write("---")
+            st.markdown("### 🎛️ Nastavení režimu turnaje")
+            volba_rezimu = st.checkbox("🏆 AKTIVIVAT REŽIM PLAY-OFF (Skryje remízy, zablokuje remízová skóre)", value=je_playoff)
+            
+            if st.button("💾 ULOŽIT REŽIM TURNAJE", type="primary"):
+                with st.spinner("Zapisuji režim turnaje do buňky V1 v listu Zápasy..."):
+                    sheet_z_raw = client.open("Mistrovstvi_Tipovacka").worksheet("Zápasy")
+                    hodnota_pro_zapis = "Ano" if volba_rezimu else "Ne"
+                    sheet_z_raw.update("V1", [[hodnota_pro_zapis]])
+                st.cache_data.clear()
+                st.success("Režim turnaje byl úspěšně uložen a aplikován!")
+                st.rerun()
             
             if st.button("🔄 Stáhnout čerstvé zápasy", type="secondary"):
                 SPORT = "soccer_fifa_world_cup" 
